@@ -1,0 +1,37 @@
+Stwórz plugin do Minecrafta o nazwie SimpleSession (autor: TremeQ), przeznaczony na serwery Minecraft w wersji 1.21, napisany w języku Java 21 i budowany przez Maven. Plugin powinien być nowocześniejszą alternatywą dla SessionTime.
+
+Wymagania funkcjonalne:
+
+Wyświetlanie czasu trwania bieżącej sesji gracza – liczonych od wejścia na serwer do wyjścia lub restartu.
+
+Integracja z PlaceholderAPI:
+
+placeholder dla sekund sesji
+
+placeholder dla minut sesji
+
+placeholder dla godzin sesji
+
+placeholder dla dni sesji
+
+placeholder z całością czasu sformatowaną (np. „2 dni, 5 godzin, 21 minut, 12 sekund”)
+
+placeholder z całkowitą liczbą sekund/minut/godzin/dni sesji
+
+Obsługa wywołań w tablicach wyników, scoreboardach, GUI oraz innych systemach pluginowych wykorzystujących PlaceholderAPI.
+
+Możliwość definiowania własnych formatów wyświetlania czasu – użytkownik ma opcję ustawić swój własny format wyświetlania (np. „{days}d {hours}h {minutes}m {seconds}s”) poprzez plik konfiguracyjny.
+
+Wszystkie placeholdery muszą być precyzyjne, odporne na błędy, nie mogą powodować obciążenia serwera nawet przy wielu graczach online.
+
+Plugin powinien mieć prostą konfigurację oraz dokumentację w języku polskim i angielskim.
+
+Wersja Javy: 21, kompilacja wyłącznie przez Maven (pom.xml), bez Gradle.
+
+Dodatkowe zalecenia:
+
+Kod pluginu ma być czysty, modularny i testowalny.
+
+Zapewnij komentarze dla najważniejszych klas i metod oraz czytelny README.md opisujący funkcje, placeholdery i wersje wspierane.
+
+Licencja: MIT.

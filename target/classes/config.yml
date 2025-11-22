@@ -1,0 +1,169 @@
+# ============================================
+#       SimpleSession Configuration
+# ============================================
+# Author: TremeQ
+# https://github.com/TremeQ/SimpleSession
+#
+# === AVAILABLE PLACEHOLDERS / DOSTĘPNE PLACEHOLDERY ===
+# Individual components / Pojedyncze wartości:
+#   %simplesession_seconds%       - Seconds (0-59) / Sekundy
+#   %simplesession_minutes%       - Minutes (0-59) / Minuty
+#   %simplesession_hours%         - Hours (0-23) / Godziny
+#   %simplesession_days%          - Days / Dni
+#
+# Total time / Całkowity czas:
+#   %simplesession_total_seconds% - Total seconds / Wszystkie sekundy
+#   %simplesession_total_minutes% - Total minutes / Wszystkie minuty
+#   %simplesession_total_hours%   - Total hours / Wszystkie godziny
+#   %simplesession_total_days%    - Total days / Wszystkie dni
+#
+# Formatted / Sformatowane:
+#   %simplesession_formatted%        - Default format / Domyślny
+#   %simplesession_formatted_full%   - Full format / Pełny
+#   %simplesession_formatted_short%  - Short format / Krótki
+#   %simplesession_formatted_custom% - Custom format / Własny
+#
+# Ranking & Leaderboard / Ranking i Topka:
+#   %simplesession_rank%             - Your rank / Twoja pozycja
+#   %simplesession_top_1_name%       - Top 1 player name / Nazwa gracza #1
+#   %simplesession_top_1_time%       - Top 1 session time / Czas sesji #1
+#   %simplesession_top_2_name%       - Top 2 player name / Nazwa gracza #2
+#   %simplesession_top_2_time%       - Top 2 session time / Czas sesji #2
+#   ... (supports top_1 through top_10 / wspiera od top_1 do top_10)
+#
+# Example usage / Przykład:
+#   Your session: %simplesession_formatted%
+#   Time: %simplesession_hours%h %simplesession_minutes%m
+#   Hologram: #1 %simplesession_top_1_name% - %simplesession_top_1_time%
+# ============================================
+
+# Time display formats / Formaty wyświetlania
+# Variables / Zmienne: {days}, {hours}, {minutes}, {seconds}
+time-formats:
+  # Full / Pełny: "2 days, 5 hours, 21 minutes, 12 seconds"
+  full: "{days} dni, {hours} godzin, {minutes} minut, {seconds} sekund"
+
+  # Short / Krótki: "2d 5h 21m 12s"
+  short: "{days}d {hours}h {minutes}m {seconds}s"
+
+  # Custom / Własny - edit as you like / edytuj dowolnie
+  # Examples / Przykłady:
+  #   "{hours}:{minutes}:{seconds}"
+  #   "{days} days | {hours}h"
+  custom: "{days}d {hours}h {minutes}m {seconds}s"
+
+# Default format for %simplesession_formatted%
+# Options / Opcje: full, short, custom
+default-format: "full"
+
+# Debug mode (shows extra info in console)
+# Tryb debugowania (pokazuje dodatkowe info w konsoli)
+debug: false
+
+# ============================================
+#         LEADERBOARD / RANKING
+# ============================================
+# Configuration for /simplesession top command
+# Konfiguracja dla komendy /simplesession top
+leaderboard:
+  # How many players to display / Ile graczy wyświetlać
+  top-size: 10
+
+  # Title for the leaderboard / Tytuł rankingu
+  title: "&6&l🏆 TOP {size} - Bieżące Sesje"
+
+  # Display format / Format wyświetlania
+  format:
+    # Header line / Górna linia
+    header: "&7╔════════════════════════════════╗"
+
+    # Separator line / Linia separator
+    separator: "&7╠════════════════════════════════╣"
+
+    # Line format for each player / Format linii dla każdego gracza
+    # Available placeholders / Dostępne placeholdery:
+    #   {medal} - Medal emoji / Emoji medalu
+    #   {rank} - Position number / Numer pozycji
+    #   {player} - Player name / Nazwa gracza
+    #   {time} - Formatted session time / Sformatowany czas sesji
+    #   {color} - Rank color / Kolor pozycji
+    line: "&7║ {medal} {rank}. {player} &7- {color}{time}"
+
+    # Footer line / Dolna linia
+    footer: "&7╚════════════════════════════════╝"
+
+    # Medals for top 3 / Medale dla top 3
+    medals:
+      first: "🥇"   # 1st place / 1. miejsce
+      second: "🥈"  # 2nd place / 2. miejsce
+      third: "🥉"   # 3rd place / 3. miejsce
+      other: "  "   # 4th+ place / 4.+ miejsce
+
+    # Colors for ranks / Kolory dla pozycji
+    colors:
+      first: "&6"   # 1st place / 1. miejsce (gold)
+      second: "&7"  # 2nd place / 2. miejsce (gray)
+      third: "&c"   # 3rd place / 3. miejsce (red)
+      other: "&f"   # 4th+ place / 4.+ miejsce (white)
+
+# ============================================
+#            SESSION MILESTONES
+# ============================================
+# Milestones are achievements players receive when they reach
+# specific session durations. You can send messages and execute
+# commands as rewards.
+#
+# Milestones są osiągnięciami które gracze otrzymują gdy osiągną
+# określony czas sesji. Możesz wysyłać wiadomości i wykonywać
+# komendy jako nagrody.
+milestones:
+  # Enable/disable milestones / Włącz/wyłącz milestones
+  enabled: true
+
+  # How often to check (in seconds) / Jak często sprawdzać (w sekundach)
+  check-interval: 60
+
+  # List of milestones / Lista milestone'ów
+  list:
+    # 30 minutes / 30 minut
+    half_hour:
+      time: 1800  # seconds / sekundy
+      message: "&aGrasz już 30 minut! Dziękujemy! &e❤"
+      commands: []
+
+    # 1 hour / 1 godzina
+    one_hour:
+      time: 3600  # seconds / sekundy
+      message: "&6&lWOW! &ePełna godzina na serwerze! &6⭐"
+      commands:
+        - "broadcast &e{player} &7gra już &e1 godzinę &7non-stop!"
+      # You can add rewards / Możesz dodać nagrody:
+      # - "give {player} diamond 1"
+      # - "eco give {player} 100"
+
+    # 2 hours / 2 godziny
+    two_hours:
+      time: 7200  # seconds / sekundy
+      message: "&c&lNIESAMOWITE! &62 godziny non-stop! &c🔥"
+      commands:
+        - "broadcast &c{player} &7gra już &c2 godziny &7bez przerwy!"
+
+    # 3 hours / 3 godziny
+    three_hours:
+      time: 10800  # seconds / sekundy
+      message: "&d&lLEGENDA! &53 godziny sesji! &d✨"
+      commands:
+        - "broadcast &d{player} &7jest legendą - &d3 godziny &7gry!"
+
+    # 5 hours / 5 godzin
+    five_hours:
+      time: 18000  # seconds / sekundy
+      message: "&b&lEPICKIE! &35 godzin! Jesteś niesamowity! &b🏆"
+      commands:
+        - "broadcast &b&l{player} &7gra już &b&l5 GODZIN &7non-stop!"
+
+  # Available placeholders in messages and commands:
+  # Dostępne placeholdery w wiadomościach i komendach:
+  #   {player} - Player name / Nazwa gracza
+  #   {uuid}   - Player UUID / UUID gracza
+  #   {time}   - Formatted milestone time / Sformatowany czas milestone

@@ -1,0 +1,25 @@
+name: SimpleSession
+version: ${project.version}
+main: pl.tremeq.simplesession.SimpleSession
+api-version: 1.21
+author: TremeQ
+description: Modern session time tracking plugin for Minecraft
+website: https://github.com/TremeQ/SimpleSession
+
+softdepend:
+  - PlaceholderAPI
+
+commands:
+  simplesession:
+    description: Main SimpleSession command
+    usage: /<command> [help|info|reload|debug]
+    aliases: [ss, session]
+    permission: simplesession.use
+
+permissions:
+  simplesession.use:
+    description: Allows basic usage of SimpleSession commands
+    default: true
+  simplesession.admin:
+    description: Access to all SimpleSession admin commands
+    default: op
