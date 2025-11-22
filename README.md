@@ -23,6 +23,7 @@ SimpleSession to nowoczesna alternatywa dla SessionTime, zaprojektowana do śled
 - Top 10 leaderboard for current sessions with ranking system
 - Leaderboard placeholders for holograms (top_1_name, top_1_time, etc.)
 - Fully customizable leaderboard display (header, lines, footer, medals, colors)
+- Fully customizable messages (messages.yml) - translate to any language
 - Customizable time display formats via configuration
 - Support for days, hours, minutes, and seconds
 - Admin commands for reload, debug, and info
@@ -36,6 +37,7 @@ SimpleSession to nowoczesna alternatywa dla SessionTime, zaprojektowana do śled
 - Ranking TOP 10 dla bieżących sesji z systemem pozycji
 - Placeholdery topki dla hologramów (top_1_name, top_1_time, itp.)
 - W pełni konfigurowalne wyświetlanie rankingu (nagłówek, linie, stopka, medale, kolory)
+- W pełni konfigurowalne wiadomości (messages.yml) - tłumaczenie na dowolny język
 - Konfigurowalne formaty wyświetlania czasu
 - Obsługa dni, godzin, minut i sekund
 - Komendy administracyjne do przeładowania, debugowania i informacji
@@ -119,7 +121,7 @@ All placeholders start with `%simplesession_`
 
 ## Configuration / Konfiguracja
 
-**config.yml:**
+### config.yml
 
 ```yaml
 # Time format settings
@@ -205,6 +207,50 @@ Możesz używać następujących zmiennych w `leaderboard.format.line`:
 - `{player}` - Nazwa gracza
 - `{time}` - Sformatowany czas sesji
 - `{color}` - Kolor pozycji (konfigurowany w sekcji colors)
+
+---
+
+### messages.yml
+
+**[English]**
+All plugin messages can be customized in `messages.yml`. This file allows you to translate the plugin to any language or customize message formatting.
+
+**[Polski]**
+Wszystkie wiadomości pluginu można dostosować w `messages.yml`. Ten plik pozwala przetłumaczyć plugin na dowolny język lub dostosować formatowanie wiadomości.
+
+**Example / Przykład:**
+```yaml
+# Plugin prefix
+prefix: "&8[&6SimpleSession&8]&r"
+
+commands:
+  help:
+    header: "&6&l===== &eSimpleSession Commands &6&l====="
+    list:
+      - "&e/simplesession help &7- Show this help menu"
+      - "&e/simplesession info &7- Display plugin information"
+      - "&e/simplesession top &7- Show top sessions leaderboard"
+      - "&e/simplesession reload &7- Reload configuration"
+      - "&e/simplesession debug &7- Toggle debug mode"
+    footer: "&6&l=============================="
+
+  reload:
+    success: "{prefix} &aConfiguration reloaded successfully!"
+    error: "{prefix} &cError reloading configuration!"
+
+  debug:
+    enabled: "{prefix} &aDebug mode enabled!"
+    disabled: "{prefix} &cDebug mode disabled!"
+
+  no-permission: "{prefix} &cYou don't have permission to use this command!"
+```
+
+**Available Placeholders in messages.yml / Dostępne placeholdery w messages.yml:**
+- `{prefix}` - Plugin prefix
+- `{player}` - Player name
+- `{version}` - Plugin version
+- `{size}` - Number value
+- `{placeholderapi}` - PlaceholderAPI status
 
 ---
 

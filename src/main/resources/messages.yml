@@ -1,0 +1,91 @@
+# ============================================
+#       SimpleSession Messages
+# ============================================
+# All plugin messages can be customized here
+# Wszystkie wiadomości pluginu można dostosować tutaj
+#
+# Color codes: Use & for colors (e.g., &6 = gold, &e = yellow)
+# Kody kolorów: Używaj & dla kolorów (np. &6 = złoty, &e = żółty)
+#
+# Available placeholders / Dostępne placeholdery:
+#   {prefix} - Plugin prefix / Prefix pluginu
+#   {player} - Player name / Nazwa gracza
+#   {size} - Number value / Wartość liczbowa
+#   {version} - Plugin version / Wersja pluginu
+# ============================================
+
+# Plugin prefix used in all messages
+# Prefix używany we wszystkich wiadomościach
+prefix: "&8[&6SimpleSession&8]&r"
+
+# ============================================
+#              COMMANDS / KOMENDY
+# ============================================
+
+commands:
+  # /simplesession help
+  help:
+    header: "&6&l===== &eSimpleSession Commands &6&l====="
+    # Available commands list / Lista dostępnych komend
+    list:
+      - "&e/simplesession help &7- Show this help menu"
+      - "&e/simplesession info &7- Display plugin information"
+      - "&e/simplesession top &7- Show top sessions leaderboard"
+      - "&e/simplesession reload &7- Reload configuration"
+      - "&e/simplesession debug &7- Toggle debug mode"
+    footer: "&6&l=============================="
+
+  # /simplesession info
+  info:
+    header: "&6&l===== &eSimpleSession Info &6&l====="
+    # Plugin information lines / Linie z informacjami o pluginie
+    lines:
+      - "&7Version: &e{version}"
+      - "&7Author: &eTremeQ"
+      - "&7Description: &fSession time tracking plugin"
+      - "&7PlaceholderAPI: &a{placeholderapi}"
+    footer: "&6&l=============================="
+    placeholderapi-enabled: "Enabled"  # Status gdy PlaceholderAPI jest włączone
+    placeholderapi-disabled: "Disabled"  # Status gdy PlaceholderAPI jest wyłączone
+
+  # /simplesession reload
+  reload:
+    success: "{prefix} &aConfiguration reloaded successfully!"  # Sukces przeładowania
+    error: "{prefix} &cError reloading configuration!"  # Błąd przeładowania
+
+  # /simplesession debug
+  debug:
+    enabled: "{prefix} &aDebug mode enabled!"  # Tryb debug włączony
+    disabled: "{prefix} &cDebug mode disabled!"  # Tryb debug wyłączony
+
+  # /simplesession top
+  top:
+    no-players: "{prefix} &cNo players online!"  # Brak graczy online
+
+  # General command messages / Ogólne wiadomości komend
+  unknown-command: "{prefix} &cUnknown command! Use &e/simplesession help"  # Nieznana komenda
+  no-permission: "{prefix} &cYou don't have permission to use this command!"  # Brak uprawnień
+
+# ============================================
+#           PLUGIN STARTUP/SHUTDOWN
+# ============================================
+
+plugin:
+  # Startup messages / Wiadomości przy starcie
+  enabled: "SimpleSession has been enabled successfully!"  # Plugin włączony
+  disabled: "SimpleSession has been disabled!"  # Plugin wyłączony
+
+  # PlaceholderAPI integration / Integracja PlaceholderAPI
+  placeholderapi-registered: "PlaceholderAPI hook registered successfully!"  # PlaceholderAPI zarejestrowane
+  placeholderapi-not-found: "PlaceholderAPI not found! Placeholder functionality will be disabled."  # PlaceholderAPI nie znalezione
+
+  # Command registration / Rejestracja komend
+  command-registration-failed: "Failed to register command 'simplesession'! Check plugin.yml"  # Błąd rejestracji komendy
+
+# ============================================
+#              ERRORS / BŁĘDY
+# ============================================
+
+errors:
+  config-reload-failed: "Failed to reload configuration file!"  # Błąd przeładowania konfiguracji
+  invalid-leaderboard-size: "Invalid leaderboard size ({size}). Using default."  # Nieprawidłowy rozmiar topki

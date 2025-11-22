@@ -3,6 +3,7 @@ package pl.tremeq.simplesession;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import pl.tremeq.simplesession.command.SimpleSessionCommand;
+import pl.tremeq.simplesession.manager.MessageManager;
 import pl.tremeq.simplesession.manager.SessionManager;
 import pl.tremeq.simplesession.milestone.MilestoneManager;
 import pl.tremeq.simplesession.placeholder.SimpleSessionExpansion;
@@ -18,6 +19,7 @@ import pl.tremeq.simplesession.placeholder.SimpleSessionExpansion;
  */
 public class SimpleSession extends JavaPlugin {
 
+    private MessageManager messageManager;
     private SessionManager sessionManager;
     private MilestoneManager milestoneManager;
     private boolean placeholderAPIEnabled = false;
@@ -31,9 +33,13 @@ public class SimpleSession extends JavaPlugin {
         // Save default configuration if it doesn't exist
         saveDefaultConfig();
 
+        // Initialize message manager first
+        messageManager = new MessageManager(this);
+
         if (getConfig().getBoolean("debug", false)) {
             getLogger().info("[DEBUG] Debug mode is enabled");
             getLogger().info("[DEBUG] Loading configuration...");
+            getLogger().info("[DEBUG] MessageManager initialized");
         }
 
         // Initialize session manager
@@ -60,23 +66,23 @@ public class SimpleSession extends JavaPlugin {
                 getLogger().info("[DEBUG] Commands registered: /simplesession, /ss, /session");
             }
         } else {
-            getLogger().severe("Failed to register command 'simplesession'! Check plugin.yml");
+            getLogger().severe(messageManager.getMessage("plugin.command-registration-failed"));
         }
 
         // Register PlaceholderAPI expansion if available
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new SimpleSessionExpansion(this).register();
             placeholderAPIEnabled = true;
-            getLogger().info("PlaceholderAPI hook registered successfully!");
+            getLogger().info(messageManager.getMessage("plugin.placeholderapi-registered"));
 
             if (getConfig().getBoolean("debug", false)) {
                 getLogger().info("[DEBUG] PlaceholderAPI expansion registered");
             }
         } else {
-            getLogger().warning("PlaceholderAPI not found! Placeholder functionality will be disabled.");
+            getLogger().warning(messageManager.getMessage("plugin.placeholderapi-not-found"));
         }
 
-        getLogger().info("SimpleSession has been enabled successfully!");
+        getLogger().info(messageManager.getMessage("plugin.enabled"));
     }
 
     /**
@@ -95,7 +101,18 @@ public class SimpleSession extends JavaPlugin {
             sessionManager.clearAllSessions();
         }
 
-        getLogger().info("SimpleSession has been disabled!");
+        if (messageManager != null) {
+            getLogger().info(messageManager.getMessage("plugin.disabled"));
+        }
+    }
+
+    /**
+     * Gets the message manager instance.
+     *
+     * @return MessageManager instance
+     */
+    public MessageManager getMessageManager() {
+        return messageManager;
     }
 
     /**

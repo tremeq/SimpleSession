@@ -23,7 +23,6 @@ import java.util.List;
 public class SimpleSessionCommand implements CommandExecutor, TabCompleter {
 
     private final SimpleSession plugin;
-    private static final String PREFIX = ChatColor.GRAY + "[" + ChatColor.AQUA + "SimpleSession" + ChatColor.GRAY + "] " + ChatColor.RESET;
 
     /**
      * Creates a new command executor.
@@ -76,7 +75,7 @@ public class SimpleSessionCommand implements CommandExecutor, TabCompleter {
                 break;
 
             default:
-                sender.sendMessage(PREFIX + ChatColor.RED + "Nieznana komenda! Użyj " + ChatColor.YELLOW + "/simplesession help");
+                sender.sendMessage(plugin.getMessageManager().getMessage("commands.unknown-command"));
                 return true;
         }
 
@@ -91,12 +90,17 @@ public class SimpleSessionCommand implements CommandExecutor, TabCompleter {
      */
     private void handleReload(CommandSender sender) {
         if (!sender.hasPermission("simplesession.admin")) {
-            sender.sendMessage(PREFIX + ChatColor.RED + "Nie masz uprawnień do tej komendy!");
+            sender.sendMessage(plugin.getMessageManager().getMessage("commands.no-permission"));
             return;
         }
 
         try {
             plugin.reloadConfig();
+
+            // Reload messages
+            if (plugin.getMessageManager() != null) {
+                plugin.getMessageManager().reload();
+            }
 
             // Reload debug mode in SessionManager
             if (plugin.getSessionManager() != null) {
@@ -108,13 +112,13 @@ public class SimpleSessionCommand implements CommandExecutor, TabCompleter {
                 plugin.getMilestoneManager().reload();
             }
 
-            sender.sendMessage(PREFIX + ChatColor.GREEN + "Konfiguracja została przeładowana!");
+            sender.sendMessage(plugin.getMessageManager().getMessage("commands.reload.success"));
 
             if (plugin.getConfig().getBoolean("debug", false)) {
                 plugin.getLogger().info("[DEBUG] Configuration reloaded by " + sender.getName());
             }
         } catch (Exception e) {
-            sender.sendMessage(PREFIX + ChatColor.RED + "Błąd podczas przeładowywania konfiguracji!");
+            sender.sendMessage(plugin.getMessageManager().getMessage("commands.reload.error"));
             plugin.getLogger().severe("Error reloading configuration: " + e.getMessage());
             e.printStackTrace();
         }
@@ -127,22 +131,21 @@ public class SimpleSessionCommand implements CommandExecutor, TabCompleter {
      * @param sender Command sender
      */
     private void handleInfo(CommandSender sender) {
-        sender.sendMessage(ChatColor.GRAY + "════════════════════════════════");
-        sender.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "SimpleSession");
-        sender.sendMessage(ChatColor.GRAY + "Autor: " + ChatColor.WHITE + "TremeQ");
-        sender.sendMessage(ChatColor.GRAY + "Wersja: " + ChatColor.WHITE + plugin.getDescription().getVersion());
-        sender.sendMessage(ChatColor.GRAY + "API: " + ChatColor.WHITE + plugin.getDescription().getAPIVersion());
-        sender.sendMessage("");
-        sender.sendMessage(ChatColor.GRAY + "PlaceholderAPI: " +
-            (plugin.isPlaceholderAPIEnabled() ? ChatColor.GREEN + "✓ Włączone" : ChatColor.RED + "✗ Wyłączone"));
-        sender.sendMessage(ChatColor.GRAY + "Debug Mode: " +
-            (plugin.getConfig().getBoolean("debug", false) ? ChatColor.YELLOW + "✓ Włączony" : ChatColor.GRAY + "✗ Wyłączony"));
-        sender.sendMessage(ChatColor.GRAY + "Milestones: " +
-            (plugin.getMilestoneManager().isEnabled() ?
-                ChatColor.GREEN + "✓ " + plugin.getMilestoneManager().getMilestoneCount() + " załadowanych" :
-                ChatColor.RED + "✗ Wyłączone"));
-        sender.sendMessage(ChatColor.GRAY + "Aktywne sesje: " + ChatColor.WHITE + plugin.getServer().getOnlinePlayers().size());
-        sender.sendMessage(ChatColor.GRAY + "════════════════════════════════");
+        String placeholderStatus = plugin.isPlaceholderAPIEnabled() ?
+                plugin.getMessageManager().getMessage("commands.info.placeholderapi-enabled") :
+                plugin.getMessageManager().getMessage("commands.info.placeholderapi-disabled");
+
+        sender.sendMessage(plugin.getMessageManager().getMessage("commands.info.header"));
+
+        List<String> infoLines = plugin.getMessageManager().getMessageList("commands.info.lines",
+                "{version}", plugin.getDescription().getVersion(),
+                "{placeholderapi}", placeholderStatus);
+
+        for (String line : infoLines) {
+            sender.sendMessage(line);
+        }
+
+        sender.sendMessage(plugin.getMessageManager().getMessage("commands.info.footer"));
     }
 
     /**
@@ -153,7 +156,7 @@ public class SimpleSessionCommand implements CommandExecutor, TabCompleter {
      */
     private void handleDebug(CommandSender sender) {
         if (!sender.hasPermission("simplesession.admin")) {
-            sender.sendMessage(PREFIX + ChatColor.RED + "Nie masz uprawnień do tej komendy!");
+            sender.sendMessage(plugin.getMessageManager().getMessage("commands.no-permission"));
             return;
         }
 
@@ -168,8 +171,11 @@ public class SimpleSessionCommand implements CommandExecutor, TabCompleter {
             plugin.getSessionManager().reloadDebugMode();
         }
 
-        String status = newDebug ? ChatColor.GREEN + "włączony" : ChatColor.RED + "wyłączony";
-        sender.sendMessage(PREFIX + "Tryb debugowania został " + status + ChatColor.RESET + "!");
+        String message = newDebug ?
+                plugin.getMessageManager().getMessage("commands.debug.enabled") :
+                plugin.getMessageManager().getMessage("commands.debug.disabled");
+
+        sender.sendMessage(message);
 
         if (newDebug) {
             plugin.getLogger().info("[DEBUG] Debug mode enabled by " + sender.getName());
@@ -190,7 +196,7 @@ public class SimpleSessionCommand implements CommandExecutor, TabCompleter {
             plugin.getSessionManager().getSortedPlayers();
 
         if (sortedPlayers.isEmpty()) {
-            sender.sendMessage(PREFIX + ChatColor.RED + "Brak graczy online!");
+            sender.sendMessage(plugin.getMessageManager().getMessage("commands.top.no-players"));
             return;
         }
 
@@ -296,21 +302,14 @@ public class SimpleSessionCommand implements CommandExecutor, TabCompleter {
      * @param sender Command sender
      */
     private void sendHelp(CommandSender sender) {
-        sender.sendMessage(ChatColor.GRAY + "════════════════════════════════");
-        sender.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "SimpleSession - Pomoc");
-        sender.sendMessage("");
-        sender.sendMessage(ChatColor.YELLOW + "/simplesession help " + ChatColor.GRAY + "- Wyświetla tę pomoc");
-        sender.sendMessage(ChatColor.YELLOW + "/simplesession info " + ChatColor.GRAY + "- Informacje o pluginie");
-        sender.sendMessage(ChatColor.YELLOW + "/simplesession top " + ChatColor.GRAY + "- Top 10 bieżących sesji");
+        sender.sendMessage(plugin.getMessageManager().getMessage("commands.help.header"));
 
-        if (sender.hasPermission("simplesession.admin")) {
-            sender.sendMessage(ChatColor.YELLOW + "/simplesession reload " + ChatColor.GRAY + "- Przeładowuje konfigurację");
-            sender.sendMessage(ChatColor.YELLOW + "/simplesession debug " + ChatColor.GRAY + "- Przełącza tryb debugowania");
+        List<String> helpLines = plugin.getMessageManager().getMessageList("commands.help.list");
+        for (String line : helpLines) {
+            sender.sendMessage(line);
         }
 
-        sender.sendMessage("");
-        sender.sendMessage(ChatColor.GRAY + "Alias: " + ChatColor.WHITE + "/ss");
-        sender.sendMessage(ChatColor.GRAY + "════════════════════════════════");
+        sender.sendMessage(plugin.getMessageManager().getMessage("commands.help.footer"));
     }
 
     /**
