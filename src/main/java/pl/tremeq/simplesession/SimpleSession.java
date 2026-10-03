@@ -1,83 +1,79 @@
 package pl.tremeq.simplesession;
 
 import org.bukkit.Bukkit;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 import pl.tremeq.simplesession.command.SimpleSessionCommand;
+import pl.tremeq.simplesession.format.FormatManager;
 import pl.tremeq.simplesession.manager.MessageManager;
-import pl.tremeq.simplesession.manager.SessionManager;
 import pl.tremeq.simplesession.milestone.MilestoneManager;
 import pl.tremeq.simplesession.placeholder.SimpleSessionExpansion;
+import pl.tremeq.simplesession.session.SessionManager;
+import pl.tremeq.simplesession.stats.StatsManager;
+import pl.tremeq.simplesession.util.ConfigUpdater;
+
+import java.util.Set;
 
 /**
  * SimpleSession - Modern session time tracking plugin for Minecraft
  *
- * This plugin tracks player session time and provides PlaceholderAPI integration
- * for displaying session duration in various formats.
+ * Tracks the current session of every player, keeps persistent statistics (SQLite),
+ * protects sessions against short relogs and provides PlaceholderAPI placeholders.
  *
  * @author TremeQ
- * @version 1.0.0
+ * @version 2.0.0
  */
 public class SimpleSession extends JavaPlugin {
 
     private MessageManager messageManager;
+    private FormatManager formatManager;
+    private StatsManager statsManager;
     private SessionManager sessionManager;
     private MilestoneManager milestoneManager;
+    private SimpleSessionExpansion expansion;
     private boolean placeholderAPIEnabled = false;
 
-    /**
-     * Called when the plugin is enabled.
-     * Initializes managers, registers listeners and PlaceholderAPI expansion.
-     */
     @Override
     public void onEnable() {
-        // Save default configuration if it doesn't exist
         saveDefaultConfig();
+        // Add options introduced in newer versions to files created by an older version (with backup)
+        if (ConfigUpdater.update(this, "config.yml", Set.of("milestones.list"), Set.of())) {
+            reloadConfig();
+        }
+        ConfigUpdater.update(this, "messages.yml", Set.of(), Set.of("commands.help.list", "commands.info.lines"));
 
-        // Initialize message manager first
         messageManager = new MessageManager(this);
+        debug("MessageManager initialized");
 
-        if (getConfig().getBoolean("debug", false)) {
-            getLogger().info("[DEBUG] Debug mode is enabled");
-            getLogger().info("[DEBUG] Loading configuration...");
-            getLogger().info("[DEBUG] MessageManager initialized");
-        }
+        formatManager = new FormatManager(getLogger());
+        formatManager.load(getConfig());
+        debug("Loaded time formats: " + formatManager.names());
 
-        // Initialize session manager
+        statsManager = new StatsManager(this);
+        debug("StatsManager initialized (enabled: " + statsManager.isEnabled() + ")");
+
         sessionManager = new SessionManager(this);
+        sessionManager.initialize();
+        debug("SessionManager initialized");
 
-        if (getConfig().getBoolean("debug", false)) {
-            getLogger().info("[DEBUG] SessionManager initialized");
-        }
-
-        // Initialize milestone manager
         milestoneManager = new MilestoneManager(this);
+        debug("MilestoneManager initialized");
 
-        if (getConfig().getBoolean("debug", false)) {
-            getLogger().info("[DEBUG] MilestoneManager initialized");
-        }
-
-        // Register command
-        SimpleSessionCommand commandExecutor = new SimpleSessionCommand(this);
-        if (getCommand("simplesession") != null) {
-            getCommand("simplesession").setExecutor(commandExecutor);
-            getCommand("simplesession").setTabCompleter(commandExecutor);
-
-            if (getConfig().getBoolean("debug", false)) {
-                getLogger().info("[DEBUG] Commands registered: /simplesession, /ss, /session");
-            }
+        PluginCommand command = getCommand("simplesession");
+        if (command != null) {
+            SimpleSessionCommand executor = new SimpleSessionCommand(this);
+            command.setExecutor(executor);
+            command.setTabCompleter(executor);
+            debug("Commands registered: /simplesession, /ss, /session");
         } else {
             getLogger().severe(messageManager.getMessage("plugin.command-registration-failed"));
         }
 
-        // Register PlaceholderAPI expansion if available
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            new SimpleSessionExpansion(this).register();
+            expansion = new SimpleSessionExpansion(this);
+            expansion.register();
             placeholderAPIEnabled = true;
             getLogger().info(messageManager.getMessage("plugin.placeholderapi-registered"));
-
-            if (getConfig().getBoolean("debug", false)) {
-                getLogger().info("[DEBUG] PlaceholderAPI expansion registered");
-            }
         } else {
             getLogger().warning(messageManager.getMessage("plugin.placeholderapi-not-found"));
         }
@@ -85,59 +81,72 @@ public class SimpleSession extends JavaPlugin {
         getLogger().info(messageManager.getMessage("plugin.enabled"));
     }
 
-    /**
-     * Called when the plugin is disabled.
-     * Cleans up resources and saves session data.
-     */
     @Override
     public void onDisable() {
-        // Shutdown milestone manager
         if (milestoneManager != null) {
             milestoneManager.shutdown();
         }
-
-        // Clear all active sessions
-        if (sessionManager != null) {
-            sessionManager.clearAllSessions();
+        if (statsManager != null) {
+            statsManager.shutdown();
         }
-
+        if (sessionManager != null) {
+            sessionManager.shutdown();
+        }
+        if (expansion != null) {
+            expansion.unregister();
+            expansion = null;
+        }
         if (messageManager != null) {
             getLogger().info(messageManager.getMessage("plugin.disabled"));
         }
     }
 
     /**
-     * Gets the message manager instance.
-     *
-     * @return MessageManager instance
+     * Reloads config.yml, messages.yml and every module.
      */
+    public void reloadPlugin() {
+        reloadConfig();
+        messageManager.reload();
+        formatManager.load(getConfig());
+        sessionManager.loadSettings();
+        statsManager.reload();
+        milestoneManager.reload();
+        if (expansion != null) {
+            expansion.reload();
+        }
+    }
+
+    /**
+     * Logs a message when debug mode is enabled.
+     *
+     * @param message Message
+     */
+    public void debug(String message) {
+        if (getConfig().getBoolean("debug", false)) {
+            getLogger().info("[DEBUG] " + message);
+        }
+    }
+
     public MessageManager getMessageManager() {
         return messageManager;
     }
 
-    /**
-     * Gets the session manager instance.
-     *
-     * @return SessionManager instance
-     */
+    public FormatManager getFormatManager() {
+        return formatManager;
+    }
+
+    public StatsManager getStatsManager() {
+        return statsManager;
+    }
+
     public SessionManager getSessionManager() {
         return sessionManager;
     }
 
-    /**
-     * Gets the milestone manager instance.
-     *
-     * @return MilestoneManager instance
-     */
     public MilestoneManager getMilestoneManager() {
         return milestoneManager;
     }
 
-    /**
-     * Checks if PlaceholderAPI is enabled.
-     *
-     * @return true if PlaceholderAPI is enabled, false otherwise
-     */
     public boolean isPlaceholderAPIEnabled() {
         return placeholderAPIEnabled;
     }

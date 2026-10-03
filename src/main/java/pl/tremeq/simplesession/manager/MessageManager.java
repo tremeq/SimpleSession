@@ -1,22 +1,22 @@
 package pl.tremeq.simplesession.manager;
 
-import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import pl.tremeq.simplesession.SimpleSession;
+import pl.tremeq.simplesession.util.Text;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * MessageManager handles all plugin messages from messages.yml.
  *
- * This class manages loading, caching, and formatting of messages
- * with support for color codes and placeholders.
+ * Missing keys fall back to the defaults bundled in the jar.
+ * Every message supports & colors, &#RRGGBB hex colors and the {prefix} placeholder.
  *
  * @author TremeQ
  */
@@ -24,8 +24,7 @@ public class MessageManager {
 
     private final SimpleSession plugin;
     private FileConfiguration messagesConfig;
-    private File messagesFile;
-    private String prefix;
+    private String prefix = "";
 
     /**
      * Creates a new MessageManager instance.
@@ -41,53 +40,32 @@ public class MessageManager {
      * Loads or reloads the messages configuration.
      */
     public void loadMessages() {
-        // Create messages file if it doesn't exist
-        messagesFile = new File(plugin.getDataFolder(), "messages.yml");
+        File messagesFile = new File(plugin.getDataFolder(), "messages.yml");
         if (!messagesFile.exists()) {
             plugin.saveResource("messages.yml", false);
         }
 
-        // Load messages configuration
         messagesConfig = YamlConfiguration.loadConfiguration(messagesFile);
 
-        // Load defaults from jar
         InputStream defaultStream = plugin.getResource("messages.yml");
         if (defaultStream != null) {
             YamlConfiguration defaultConfig = YamlConfiguration.loadConfiguration(
-                new InputStreamReader(defaultStream)
-            );
+                    new InputStreamReader(defaultStream, StandardCharsets.UTF_8));
             messagesConfig.setDefaults(defaultConfig);
         }
 
-        // Cache prefix for performance
-        prefix = getMessage("prefix");
+        String rawPrefix = messagesConfig.getString("prefix");
+        prefix = rawPrefix == null ? "" : Text.color(rawPrefix);
     }
 
     /**
-     * Saves the messages configuration to file.
-     */
-    public void saveMessages() {
-        try {
-            messagesConfig.save(messagesFile);
-        } catch (IOException e) {
-            plugin.getLogger().severe("Could not save messages.yml!");
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Gets a message from messages.yml with color codes translated.
+     * Gets a message with colors translated and {prefix} replaced.
      *
      * @param path Path to the message in messages.yml
-     * @return Formatted message with colors, or path if not found
+     * @return Formatted message, or the path if the message does not exist
      */
     public String getMessage(String path) {
-        String message = messagesConfig.getString(path);
-        if (message == null) {
-            plugin.getLogger().warning("Message not found: " + path);
-            return path;
-        }
-        return ChatColor.translateAlternateColorCodes('&', message);
+        return getMessage(path, new String[0]);
     }
 
     /**
@@ -95,35 +73,15 @@ public class MessageManager {
      *
      * @param path Path to the message
      * @param placeholders Placeholder replacements (key, value, key, value, ...)
-     * @return Formatted message with placeholders replaced
+     * @return Formatted message
      */
     public String getMessage(String path, String... placeholders) {
-        String message = getMessage(path);
-
-        // Replace placeholders
-        for (int i = 0; i < placeholders.length - 1; i += 2) {
-            String placeholder = placeholders[i];
-            String value = placeholders[i + 1];
-            message = message.replace(placeholder, value);
+        String message = messagesConfig.getString(path);
+        if (message == null) {
+            plugin.getLogger().warning("Message not found: " + path);
+            return path;
         }
-
-        // Always replace {prefix}
-        message = message.replace("{prefix}", prefix);
-
-        return message;
-    }
-
-    /**
-     * Gets a list of messages from messages.yml.
-     *
-     * @param path Path to the message list
-     * @return List of formatted messages with colors
-     */
-    public List<String> getMessageList(String path) {
-        List<String> messages = messagesConfig.getStringList(path);
-        return messages.stream()
-                .map(msg -> ChatColor.translateAlternateColorCodes('&', msg))
-                .collect(Collectors.toList());
+        return format(message, placeholders);
     }
 
     /**
@@ -131,25 +89,44 @@ public class MessageManager {
      *
      * @param path Path to the message list
      * @param placeholders Placeholder replacements (key, value, key, value, ...)
-     * @return List of formatted messages with placeholders replaced
+     * @return Formatted lines
      */
     public List<String> getMessageList(String path, String... placeholders) {
-        List<String> messages = getMessageList(path);
+        return messagesConfig.getStringList(path).stream()
+                .map(line -> format(line, placeholders))
+                .toList();
+    }
 
-        return messages.stream()
-                .map(msg -> {
-                    String message = msg;
-                    // Replace placeholders
-                    for (int i = 0; i < placeholders.length - 1; i += 2) {
-                        String placeholder = placeholders[i];
-                        String value = placeholders[i + 1];
-                        message = message.replace(placeholder, value);
-                    }
-                    // Always replace {prefix}
-                    message = message.replace("{prefix}", prefix);
-                    return message;
-                })
-                .collect(Collectors.toList());
+    /**
+     * Sends a message; empty messages are not sent (lets admins disable a message).
+     *
+     * @param sender Receiver
+     * @param path Path to the message
+     * @param placeholders Placeholder replacements (key, value, key, value, ...)
+     */
+    public void send(CommandSender sender, String path, String... placeholders) {
+        String message = getMessage(path, placeholders);
+        if (!message.isEmpty()) {
+            sender.sendMessage(message);
+        }
+    }
+
+    /**
+     * Sends every line of a message list.
+     *
+     * @param sender Receiver
+     * @param path Path to the message list
+     * @param placeholders Placeholder replacements (key, value, key, value, ...)
+     */
+    public void sendList(CommandSender sender, String path, String... placeholders) {
+        for (String line : getMessageList(path, placeholders)) {
+            sender.sendMessage(line);
+        }
+    }
+
+    private String format(String message, String... placeholders) {
+        String replaced = Text.replace(message, placeholders);
+        return Text.color(replaced).replace("{prefix}", prefix);
     }
 
     /**

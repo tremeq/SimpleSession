@@ -4,18 +4,18 @@
 # All plugin messages can be customized here
 # Wszystkie wiadomości pluginu można dostosować tutaj
 #
-# Color codes: Use & for colors (e.g., &6 = gold, &e = yellow)
-# Kody kolorów: Używaj & dla kolorów (np. &6 = złoty, &e = żółty)
+# Colors: & codes (&6 = gold) and hex &#RRGGBB
+# Kolory: kody & (&6 = złoty) oraz hex &#RRGGBB
+# An empty message ("") is not sent / Pusta wiadomość ("") nie jest wysyłana
 #
 # Available placeholders / Dostępne placeholdery:
-#   {prefix} - Plugin prefix / Prefix pluginu
-#   {player} - Player name / Nazwa gracza
-#   {size} - Number value / Wartość liczbowa
-#   {version} - Plugin version / Wersja pluginu
+#   {prefix} - Plugin prefix / Prefix pluginu (works in every message / działa w każdej wiadomości)
+#   other placeholders are listed next to the messages / pozostałe są opisane przy wiadomościach
 # ============================================
 
-# Plugin prefix used in all messages
-# Prefix używany we wszystkich wiadomościach
+# Do not change / Nie zmieniaj
+config-version: 2
+
 prefix: "&8[&6SimpleSession&8]&r"
 
 # ============================================
@@ -23,69 +23,126 @@ prefix: "&8[&6SimpleSession&8]&r"
 # ============================================
 
 commands:
-  # /simplesession help
   help:
-    header: "&6&l===== &eSimpleSession Commands &6&l====="
-    # Available commands list / Lista dostępnych komend
-    list:
-      - "&e/simplesession help &7- Show this help menu"
-      - "&e/simplesession info &7- Display plugin information"
-      - "&e/simplesession top &7- Show top sessions leaderboard"
-      - "&e/simplesession reload &7- Reload configuration"
-      - "&e/simplesession debug &7- Toggle debug mode"
+    header: "&6&l===== &eSimpleSession &6&l====="
+    # Entries are shown only if the player has the permission
+    # Wpisy są pokazywane tylko gdy gracz ma uprawnienie
+    entries:
+      help: "&e/ss help &7- Pokazuje tę pomoc"
+      info: "&e/ss info &7- Informacje o pluginie"
+      top: "&e/ss top [typ] [strona] &7- Ranking (session, total, record, today, week, month, sessions)"
+      check: "&e/ss check [gracz] &7- Sesja i statystyki gracza"
+      reset: "&e/ss reset <gracz> <co> &7- Resetuje sesję lub statystyki"
+      set: "&e/ss set <gracz> <total|record|sessions> <wartość> &7- Ustawia statystykę"
+      add: "&e/ss add <gracz> <total|record|sessions> <wartość> &7- Dodaje do statystyki"
+      take: "&e/ss take <gracz> <total|record|sessions> <wartość> &7- Odejmuje od statystyki"
+      reload: "&e/ss reload &7- Przeładowuje konfigurację"
+      debug: "&e/ss debug &7- Przełącza tryb debugowania"
     footer: "&6&l=============================="
 
-  # /simplesession info
+  # /ss info - {version}, {placeholderapi}, {stats}, {relog}, {milestones}
   info:
     header: "&6&l===== &eSimpleSession Info &6&l====="
-    # Plugin information lines / Linie z informacjami o pluginie
-    lines:
-      - "&7Version: &e{version}"
-      - "&7Author: &eTremeQ"
-      - "&7Description: &fSession time tracking plugin"
-      - "&7PlaceholderAPI: &a{placeholderapi}"
+    content:
+      - "&7Wersja: &e{version}"
+      - "&7Autor: &eTremeQ"
+      - "&7PlaceholderAPI: {placeholderapi}"
+      - "&7Statystyki: {stats}"
+      - "&7Ochrona przed relogiem: {relog}"
+      - "&7Kamienie milowe: &e{milestones}"
     footer: "&6&l=============================="
-    placeholderapi-enabled: "Enabled"  # Status gdy PlaceholderAPI jest włączone
-    placeholderapi-disabled: "Disabled"  # Status gdy PlaceholderAPI jest wyłączone
+    placeholderapi-enabled: "&aWłączone"
+    placeholderapi-disabled: "&cWyłączone"
+    stats-enabled: "&aWłączone (SQLite)"
+    stats-disabled: "&cWyłączone"
+    relog-enabled: "&aWłączona ({seconds}s)"
+    relog-disabled: "&cWyłączona"
 
-  # /simplesession reload
   reload:
-    success: "{prefix} &aConfiguration reloaded successfully!"  # Sukces przeładowania
-    error: "{prefix} &cError reloading configuration!"  # Błąd przeładowania
+    success: "{prefix} &aKonfiguracja przeładowana!"
+    error: "{prefix} &cBłąd podczas przeładowania konfiguracji! Sprawdź konsolę."
 
-  # /simplesession debug
   debug:
-    enabled: "{prefix} &aDebug mode enabled!"  # Tryb debug włączony
-    disabled: "{prefix} &cDebug mode disabled!"  # Tryb debug wyłączony
+    enabled: "{prefix} &aTryb debugowania włączony!"
+    disabled: "{prefix} &cTryb debugowania wyłączony!"
 
-  # /simplesession top
   top:
-    no-players: "{prefix} &cNo players online!"  # Brak graczy online
+    no-players: "{prefix} &cBrak graczy online!"
+    no-data: "{prefix} &cBrak danych w tym rankingu."
+    # {type}, {types}
+    invalid-type: "{prefix} &cNieznany ranking &e{type}&c. Dostępne: &e{types}"
+    # {page}, {pages}
+    invalid-page: "{prefix} &cStrona &e{page} &cnie istnieje (stron: &e{pages}&c)."
+    stats-disabled: "{prefix} &cTen ranking wymaga włączonych statystyk (stats.enabled)."
 
-  # General command messages / Ogólne wiadomości komend
-  unknown-command: "{prefix} &cUnknown command! Use &e/simplesession help"  # Nieznana komenda
-  no-permission: "{prefix} &cYou don't have permission to use this command!"  # Brak uprawnień
+  # /ss check [player]
+  # {player}, {status}, {session}, {rank}
+  # stats-lines also: {total}, {record}, {today}, {week}, {month}, {average}, {sessions},
+  #   {first_join}, {last_seen}, {rank_total}, {rank_record}, {rank_today}, {rank_week}, {rank_month}, {rank_sessions}
+  check:
+    header: "&6&l===== &e{player} &6&l====="
+    lines:
+      - "&7Status: {status}"
+      - "&7Bieżąca sesja: &e{session} &8(#{rank})"
+    stats-lines:
+      - "&7Łączny czas gry: &e{total} &8(#{rank_total})"
+      - "&7Najdłuższa sesja: &e{record}"
+      - "&7Liczba sesji: &e{sessions} &8| &7Średnio: &e{average}"
+      - "&7Dzisiaj: &e{today}"
+      - "&7Ten tydzień: &e{week}"
+      - "&7Ten miesiąc: &e{month}"
+      - "&7Pierwsze wejście: &e{first_join}"
+      - "&7Ostatnio widziany: &e{last_seen}"
+    stats-loading: "&7Statystyki: &ewczytywanie..."
+    footer: "&6&l=============================="
+    status-online: "&aonline"
+    status-offline: "&coffline"
+    # {time} - remaining relog protection / pozostała ochrona sesji
+    status-protected: "&eoffline &7(sesja chroniona jeszcze {time})"
+    no-session: "&7brak"
+    now: "&ateraz"
+
+  # /ss reset <player> <session|total|record|sessions|periods|all>
+  reset:
+    usage: "{prefix} &cUżycie: &e/ss reset <gracz> <{targets}>"
+    success: "{prefix} &aZresetowano &e{type} &agracza &e{player}&a."
+    session-offline: "{prefix} &cGracz &e{player} &cnie jest online - nie ma bieżącej sesji."
+
+  # /ss set|add|take <player> <total|record|sessions> <value>
+  modify:
+    usage: "{prefix} &cUżycie: &e/ss {action} <gracz> <total|record|sessions> <wartość> &7(np. 3600, 1h30m, 2d)"
+    invalid-value: "{prefix} &cNieprawidłowa wartość &e{value}&c. Przykłady: &e3600&c, &e1h30m&c, &e2d"
+    success: "{prefix} &aZmieniono &e{type} &agracza &e{player}&a. Nowa wartość: &e{value}"
+
+  player-not-found: "{prefix} &cNie znaleziono gracza &e{player}&c."
+  player-loading: "{prefix} &cDane gracza &e{player} &csię jeszcze wczytują. Spróbuj za chwilę."
+  player-only: "{prefix} &cZ konsoli podaj gracza: &e/ss check <gracz>"
+  stats-disabled: "{prefix} &cStatystyki są wyłączone (stats.enabled w config.yml)."
+  database-error: "{prefix} &cBłąd bazy danych - sprawdź konsolę."
+  unknown-command: "{prefix} &cNieznana komenda! Użyj &e/ss help"
+  no-permission: "{prefix} &cNie masz uprawnień do tej komendy!"
+
+# ============================================
+#               SESSION / SESJA
+# ============================================
+session:
+  # Sent when relog protection restored the session ("" = disabled)
+  # {time} - session length, {offline} - time spent offline
+  restored: "{prefix} &aWitaj ponownie! Twoja sesja została zachowana &7({time})&a."
 
 # ============================================
 #           PLUGIN STARTUP/SHUTDOWN
 # ============================================
-
 plugin:
-  # Startup messages / Wiadomości przy starcie
-  enabled: "SimpleSession has been enabled successfully!"  # Plugin włączony
-  disabled: "SimpleSession has been disabled!"  # Plugin wyłączony
-
-  # PlaceholderAPI integration / Integracja PlaceholderAPI
-  placeholderapi-registered: "PlaceholderAPI hook registered successfully!"  # PlaceholderAPI zarejestrowane
-  placeholderapi-not-found: "PlaceholderAPI not found! Placeholder functionality will be disabled."  # PlaceholderAPI nie znalezione
-
-  # Command registration / Rejestracja komend
-  command-registration-failed: "Failed to register command 'simplesession'! Check plugin.yml"  # Błąd rejestracji komendy
+  enabled: "SimpleSession has been enabled successfully!"
+  disabled: "SimpleSession has been disabled!"
+  placeholderapi-registered: "PlaceholderAPI hook registered successfully!"
+  placeholderapi-not-found: "PlaceholderAPI not found! Placeholder functionality will be disabled."
+  command-registration-failed: "Failed to register command 'simplesession'! Check plugin.yml"
 
 # ============================================
 #              ERRORS / BŁĘDY
 # ============================================
-
 errors:
-  config-reload-failed: "Failed to reload configuration file!"  # Błąd przeładowania konfiguracji
-  invalid-leaderboard-size: "Invalid leaderboard size ({size}). Using default."  # Nieprawidłowy rozmiar topki
+  config-reload-failed: "Failed to reload configuration file!"
+  invalid-leaderboard-size: "Invalid leaderboard.top-size ({size}). Using default 10."

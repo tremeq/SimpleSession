@@ -6,380 +6,364 @@ Modern session time tracking plugin for Minecraft 1.21
 
 **[English]**
 
-SimpleSession is a modern alternative to SessionTime, designed to track player session duration on Minecraft servers. The plugin integrates seamlessly with PlaceholderAPI, providing multiple placeholders for displaying session time in scoreboards, tab lists, GUIs, and other plugin systems.
+SimpleSession is a modern alternative to SessionTime, designed to track player session duration on Minecraft servers. Besides the current session it keeps persistent statistics (SQLite), protects sessions against short relogs and provides many PlaceholderAPI placeholders for scoreboards, tab lists, holograms and GUIs.
 
 **[Polski]**
 
-SimpleSession to nowoczesna alternatywa dla SessionTime, zaprojektowana do śledzenia czasu trwania sesji graczy na serwerach Minecraft. Plugin płynnie integruje się z PlaceholderAPI, udostępniając wiele placeholderów do wyświetlania czasu sesji w scoreboardach, listach graczy, GUI i innych systemach pluginowych.
+SimpleSession to nowoczesna alternatywa dla SessionTime, śledząca czas sesji graczy. Oprócz bieżącej sesji przechowuje trwałe statystyki (SQLite), chroni sesję przed krótkim relogiem i udostępnia wiele placeholderów PlaceholderAPI do scoreboardów, tabu, hologramów i GUI.
 
 ---
 
 ## Features / Funkcje
 
 **[English]**
-- Real-time session tracking from player join to disconnect
-- Full PlaceholderAPI integration with 33 placeholders (13 basic + 20 leaderboard)
-- Session milestones with customizable rewards and messages
-- Top 10 leaderboard for current sessions with ranking system
-- Leaderboard placeholders for holograms (top_1_name, top_1_time, etc.)
-- Fully customizable leaderboard display (header, lines, footer, medals, colors)
-- Fully customizable messages (messages.yml) - translate to any language
-- Customizable time display formats via configuration
-- Support for days, hours, minutes, and seconds
-- Admin commands for reload, debug, and info
-- Optimized performance with smart caching system
-- Built for Minecraft 1.21 with Java 21
+- Real-time session tracking (session starts before other plugins' join handlers run)
+- Persistent statistics in SQLite: total play time, longest session, number of sessions, today / this week / this month, average session, first join, last seen
+- Leaderboards: current sessions, total, record, today, week, month, sessions - with pages
+- Relog protection: a player returning within the grace period continues the old session (configurable time, optional counting of offline time, optional survival of a restart)
+- Sessions survive `/reload`
+- Smart time formats: only meaningful units with correct Polish/English plural forms ("1 godzina i 5 minut") - can be disabled globally or per format
+- Named time formats + `display` section: choose which format is used in every place (leaderboard, placeholders, /ss check, milestones...)
+- Admin commands: `/ss check`, `/ss reset`, `/ss set|add|take`
+- Session milestones with message, broadcast, permission and actions (console/player commands, title, action bar, sound)
+- Fully customizable messages (`messages.yml`, hex colors `&#RRGGBB`)
+- Automatic one-time update of old configuration files (with backup)
+- Thread-safe placeholders, database on its own thread, cached leaderboards
 
 **[Polski]**
-- Śledzenie sesji w czasie rzeczywistym od wejścia do wyjścia gracza
-- Pełna integracja z PlaceholderAPI z 33 placeholderami (13 podstawowych + 20 dla topki)
-- Kamienie milowe sesji z konfigurowalnymi nagrodami i wiadomościami
-- Ranking TOP 10 dla bieżących sesji z systemem pozycji
-- Placeholdery topki dla hologramów (top_1_name, top_1_time, itp.)
-- W pełni konfigurowalne wyświetlanie rankingu (nagłówek, linie, stopka, medale, kolory)
-- W pełni konfigurowalne wiadomości (messages.yml) - tłumaczenie na dowolny język
-- Konfigurowalne formaty wyświetlania czasu
-- Obsługa dni, godzin, minut i sekund
-- Komendy administracyjne do przeładowania, debugowania i informacji
-- Zoptymalizowana wydajność dzięki inteligentnemu systemowi cache
-- Stworzony dla Minecraft 1.21 z Java 21
+- Śledzenie sesji w czasie rzeczywistym (sesja startuje zanim inne pluginy obsłużą wejście gracza)
+- Trwałe statystyki w SQLite: łączny czas gry, najdłuższa sesja, liczba sesji, dzisiaj / tydzień / miesiąc, średnia sesja, pierwsze wejście, ostatnio widziany
+- Rankingi: bieżące sesje, łączny czas, rekord, dzisiaj, tydzień, miesiąc, liczba sesji - ze stronami
+- Ochrona przed relogiem: gracz który wróci w wyznaczonym czasie kontynuuje sesję (konfigurowalny czas, opcjonalne liczenie czasu offline, opcjonalnie także po restarcie)
+- Sesje przetrwają `/reload`
+- Inteligentne formaty czasu: tylko potrzebne jednostki z poprawną odmianą ("1 godzina i 5 minut") - można wyłączyć globalnie lub dla formatu
+- Nazwane formaty czasu + sekcja `display`: wybierasz format dla każdego miejsca (topka, placeholdery, /ss check, kamienie milowe...)
+- Komendy administracyjne: `/ss check`, `/ss reset`, `/ss set|add|take`
+- Kamienie milowe z wiadomością, ogłoszeniem, uprawnieniem i akcjami (komendy, title, action bar, dźwięk)
+- W pełni konfigurowalne wiadomości (`messages.yml`, kolory hex `&#RRGGBB`)
+- Automatyczna, jednorazowa aktualizacja starych plików konfiguracyjnych (z kopią zapasową)
+- Placeholdery bezpieczne wątkowo, baza danych na osobnym wątku, cache rankingów
 
 ---
 
 ## Requirements / Wymagania
 
-- Minecraft Server 1.21 (Spigot/Paper)
+- Minecraft Server 1.21+ (Spigot / Paper / Purpur)
 - Java 21
-- PlaceholderAPI (optional but recommended)
+- PlaceholderAPI (optional but recommended / opcjonalnie, zalecane)
+- SQLite driver is bundled with Spigot/Paper - nothing to install / sterownik SQLite jest wbudowany w Spigot/Paper
 
 ---
 
 ## Installation / Instalacja
 
+1. Place the JAR in `plugins` / Umieść JAR w `plugins`
+2. Install PlaceholderAPI / Zainstaluj PlaceholderAPI
+3. Restart the server / Zrestartuj serwer
+4. Configure `plugins/SimpleSession/config.yml` and `messages.yml`
+
+### Updating from 1.0.0 to 2.0.0 / Aktualizacja z 1.0.0 do 2.0.0
+
 **[English]**
-1. Download the latest version of SimpleSession
-2. Place the JAR file in your server's `plugins` folder
-3. Install PlaceholderAPI if not already installed
-4. Restart or reload your server
-5. Configure the plugin in `plugins/SimpleSession/config.yml`
+- On the first start the plugin backs up `config.yml` and `messages.yml` (`config-backup-v1.yml`, `messages-backup-v1.yml`) and adds every new option with its comments. This happens once (`config-version: 2`).
+- Your values are kept. The old `time-formats.full` stays a plain pattern - replace it with the new smart section from the bundled config if you want smart formatting.
+- Your milestones list is not changed. Old `broadcast ...` commands still work on servers without a `/broadcast` command.
+- `commands.help.list` was replaced by `commands.help.entries` and `commands.info.lines` by `commands.info.content` (old keys are removed). New messages are added in Polish - translate them in `messages.yml` if needed.
 
 **[Polski]**
-1. Pobierz najnowszą wersję SimpleSession
-2. Umieść plik JAR w folderze `plugins` na serwerze
-3. Zainstaluj PlaceholderAPI, jeśli nie jest jeszcze zainstalowany
-4. Zrestartuj lub przeładuj serwer
-5. Skonfiguruj plugin w pliku `plugins/SimpleSession/config.yml`
+- Przy pierwszym starcie plugin robi kopię `config.yml` i `messages.yml` (`config-backup-v1.yml`, `messages-backup-v1.yml`) i dopisuje wszystkie nowe opcje z komentarzami. Dzieje się to raz (`config-version: 2`).
+- Twoje wartości zostają. Stary `time-formats.full` pozostaje zwykłym wzorcem - podmień go na nową sekcję smart z domyślnego configu, jeśli chcesz inteligentne formatowanie.
+- Twoja lista kamieni milowych nie jest zmieniana. Stare komendy `broadcast ...` działają też na serwerach bez komendy `/broadcast`.
+- `commands.help.list` zastąpiono `commands.help.entries`, a `commands.info.lines` - `commands.info.content` (stare klucze są usuwane). Nowe wiadomości są dopisywane po polsku.
+
+### Plugin files / Pliki pluginu
+
+| File | Description / Opis |
+|------|--------------------|
+| `config.yml` | Configuration / Konfiguracja |
+| `messages.yml` | Messages / Wiadomości |
+| `stats.db` | SQLite statistics / Statystyki (SQLite) |
+| `sessions.yml` | Sessions saved on shutdown for `/reload` and relog protection (temporary) / Sesje zapisane przy wyłączeniu (tymczasowy) |
+| `*-backup-v1.yml` | Backups made during the update / Kopie zapasowe z aktualizacji |
 
 ---
 
 ## Placeholders
 
-All placeholders start with `%simplesession_`
+All placeholders start with `%simplesession_`. Placeholders are safe to use asynchronously.
 
-### Individual Time Components / Pojedyncze Komponenty Czasu
-
-| Placeholder | Description (English) | Opis (Polski) |
-|-------------|----------------------|---------------|
-| `%simplesession_seconds%` | Remaining seconds (0-59) | Pozostałe sekundy (0-59) |
-| `%simplesession_minutes%` | Remaining minutes (0-59) | Pozostałe minuty (0-59) |
-| `%simplesession_hours%` | Remaining hours (0-23) | Pozostałe godziny (0-23) |
-| `%simplesession_days%` | Total days | Całkowita liczba dni |
-
-### Total Time Values / Całkowite Wartości Czasu
+### Current session / Bieżąca sesja
 
 | Placeholder | Description (English) | Opis (Polski) |
 |-------------|----------------------|---------------|
-| `%simplesession_total_seconds%` | Total session time in seconds | Całkowity czas sesji w sekundach |
-| `%simplesession_total_minutes%` | Total session time in minutes | Całkowity czas sesji w minutach |
-| `%simplesession_total_hours%` | Total session time in hours | Całkowity czas sesji w godzinach |
-| `%simplesession_total_days%` | Total session time in days | Całkowity czas sesji w dniach |
+| `%simplesession_seconds%` | Seconds component (0-59) | Sekundy (0-59) |
+| `%simplesession_minutes%` | Minutes component (0-59) | Minuty (0-59) |
+| `%simplesession_hours%` | Hours component (0-23) | Godziny (0-23) |
+| `%simplesession_days%` | Days | Dni |
+| `%simplesession_total_seconds%` | Whole session in seconds | Cała sesja w sekundach |
+| `%simplesession_total_minutes%` | Whole session in minutes | Cała sesja w minutach |
+| `%simplesession_total_hours%` | Whole session in hours | Cała sesja w godzinach |
+| `%simplesession_total_days%` | Whole session in days | Cała sesja w dniach |
+| `%simplesession_formatted%` | Session in `default-format` | Sesja w formacie `default-format` |
+| `%simplesession_formatted_<format>%` | Session in any format from `time-formats` (e.g. `_full`, `_short`, `_compact`, `_long`, `_clock`, `_custom`) | Sesja w dowolnym formacie z `time-formats` |
+| `%simplesession_rank%` | Position by current session (1 = longest) | Pozycja wg bieżącej sesji |
 
-### Formatted Time Strings / Sformatowane Ciągi Czasu
+A player without a session (offline) is treated as 0 seconds; `rank` shows `placeholders.unranked`.
+Gracz bez sesji (offline) ma 0 sekund; `rank` pokazuje `placeholders.unranked`.
+
+### Statistics / Statystyki (`stats.enabled`)
 
 | Placeholder | Description (English) | Opis (Polski) |
 |-------------|----------------------|---------------|
-| `%simplesession_formatted%` | Default format from config | Domyślny format z konfiguracji |
-| `%simplesession_formatted_full%` | Full format (e.g., "2 dni, 5 godzin, 21 minut, 12 sekund") | Pełny format |
-| `%simplesession_formatted_short%` | Short format (e.g., "2d 5h 21m 12s") | Krótki format |
-| `%simplesession_formatted_custom%` | Custom format from config | Niestandardowy format z konfiguracji |
+| `%simplesession_stats_total%` | All-time play time | Łączny czas gry |
+| `%simplesession_stats_record%` | Longest session | Najdłuższa sesja |
+| `%simplesession_stats_today%` | Play time today | Czas gry dzisiaj |
+| `%simplesession_stats_week%` | Play time this week | Czas gry w tym tygodniu |
+| `%simplesession_stats_month%` | Play time this month | Czas gry w tym miesiącu |
+| `%simplesession_stats_average%` | Average session | Średnia sesja |
+| `%simplesession_stats_<x>_seconds%` | Any of the above in seconds | Dowolna z powyższych w sekundach |
+| `%simplesession_stats_<x>_formatted_<format>%` | Any of the above in a chosen format | Dowolna z powyższych w wybranym formacie |
+| `%simplesession_stats_sessions%` | Number of sessions | Liczba sesji |
+| `%simplesession_stats_first_join%` | First join date | Data pierwszego wejścia |
+| `%simplesession_stats_last_seen%` | Last seen date | Data ostatniej wizyty |
+| `%simplesession_rank_<type>%` | Position in a leaderboard (`total`, `record`, `today`, `week`, `month`, `sessions`, `session`) | Pozycja w rankingu |
 
-### Ranking & Leaderboard / Ranking i Tablica Wyników
+Time values use the format from `display.stats-placeholder`. Values are live (include not yet saved time). `stats_*` placeholders work for online players; for offline players (and when statistics are disabled) they return `placeholders.unavailable` - use the `top_<type>_*` placeholders for holograms.
+Czas jest formatowany wg `display.stats-placeholder`. Wartości są na żywo. Placeholdery `stats_*` działają dla graczy online; dla graczy offline (i przy wyłączonych statystykach) zwracają `placeholders.unavailable` - do hologramów używaj placeholderów `top_<type>_*`.
+
+`rank_<type>` for statistics uses the cached leaderboard, so it shows a position only within the first `leaderboard.placeholder-cache-size` players (otherwise `placeholders.unranked`).
+`rank_<type>` dla statystyk korzysta z cache rankingu, więc pokazuje pozycję tylko w obrębie pierwszych `leaderboard.placeholder-cache-size` graczy.
+
+### Leaderboards / Rankingi (holograms)
 
 | Placeholder | Description (English) | Opis (Polski) |
 |-------------|----------------------|---------------|
-| `%simplesession_rank%` | Player's rank in current session leaderboard (1 = longest) | Pozycja gracza w rankingu bieżących sesji (1 = najdłuższa) |
-| `%simplesession_top_<number>_name%` | Name of player at position (1-10) | Nazwa gracza na pozycji (1-10) |
-| `%simplesession_top_<number>_time%` | Session time of player at position (1-10) | Czas sesji gracza na pozycji (1-10) |
+| `%simplesession_top_<n>_name%` | Name at position n (current sessions) | Nick na pozycji n (bieżące sesje) |
+| `%simplesession_top_<n>_time%` | Session time at position n | Czas sesji na pozycji n |
+| `%simplesession_top_<type>_<n>_name%` | Name at position n of a leaderboard | Nick na pozycji n rankingu |
+| `%simplesession_top_<type>_<n>_time%` | Formatted value (`display.leaderboard-placeholder`) | Sformatowana wartość |
+| `%simplesession_top_<type>_<n>_time_<format>%` | Value in a chosen format | Wartość w wybranym formacie |
+| `%simplesession_top_<type>_<n>_value%` | Raw value (seconds / count) | Surowa wartość (sekundy / liczba) |
+
+`<type>`: `session`, `total`, `record`, `today`, `week`, `month`, `sessions`.
+Statistics leaderboards are cached (`leaderboard.placeholder-cache-size` positions, refreshed every `leaderboard.refresh-interval` seconds).
+Rankingi ze statystyk są cache'owane (liczba pozycji i częstotliwość odświeżania w configu).
 
 **Examples / Przykłady:**
-- `%simplesession_top_1_name%` - Name of player with longest session / Nazwa gracza z najdłuższą sesją
-- `%simplesession_top_1_time%` - Session time of #1 player / Czas sesji gracza #1
-- `%simplesession_top_2_name%` - Name of player with 2nd longest session / Nazwa gracza z drugą najdłuższą sesją
-- `%simplesession_top_10_time%` - Session time of #10 player / Czas sesji gracza #10
-
----
-
-## Configuration / Konfiguracja
-
-### config.yml
-
-```yaml
-# Time format settings
-time-formats:
-  full: "{days} dni, {hours} godzin, {minutes} minut, {seconds} sekund"
-  short: "{days}d {hours}h {minutes}m {seconds}s"
-  custom: "{days}d {hours}h {minutes}m {seconds}s"
-
-# Default format to use (full, short, or custom)
-default-format: "full"
-
-# Enable debug mode
-debug: false
-
-# Leaderboard settings
-leaderboard:
-  top-size: 10  # How many players to show
-  title: "&6&l🏆 TOP {size} - Bieżące Sesje"  # {size} = top-size value
-
-  # Display format customization
-  format:
-    header: "&7╔════════════════════════════════╗"
-    separator: "&7╠════════════════════════════════╣"
-    line: "&7║ {medal} {rank}. {player} &7- {color}{time}"
-    footer: "&7╚════════════════════════════════╝"
-
-    medals:
-      first: "🥇"   # 1st place
-      second: "🥈"  # 2nd place
-      third: "🥉"   # 3rd place
-      other: "  "   # 4th+ place
-
-    colors:
-      first: "&6"   # 1st place (gold)
-      second: "&7"  # 2nd place (gray)
-      third: "&c"   # 3rd place (red)
-      other: "&f"   # 4th+ place (white)
-
-# Session milestones
-milestones:
-  enabled: true
-  check-interval: 60  # Check every 60 seconds
-  list:
-    one_hour:
-      time: 3600  # 1 hour in seconds
-      message: "&6&lWOW! &eFull hour on the server! &6⭐"
-      commands:
-        - "broadcast &e{player} &7has been playing for &e1 hour&7!"
-```
-
-### Custom Format Variables / Zmienne Niestandardowego Formatu
-
-#### Time Formats / Formaty Czasu
-
-**[English]**
-You can use the following variables in your custom time formats:
-- `{days}` - Number of days
-- `{hours}` - Number of hours (0-23)
-- `{minutes}` - Number of minutes (0-59)
-- `{seconds}` - Number of seconds (0-59)
-
-**[Polski]**
-Możesz używać następujących zmiennych w niestandardowych formatach czasu:
-- `{days}` - Liczba dni
-- `{hours}` - Liczba godzin (0-23)
-- `{minutes}` - Liczba minut (0-59)
-- `{seconds}` - Liczba sekund (0-59)
-
-#### Leaderboard Line Format / Format Linii Rankingu
-
-**[English]**
-You can use the following variables in `leaderboard.format.line`:
-- `{medal}` - Medal emoji (configured in medals section)
-- `{rank}` - Position number (1, 2, 3, etc.)
-- `{player}` - Player name
-- `{time}` - Formatted session time
-- `{color}` - Rank color (configured in colors section)
-
-**[Polski]**
-Możesz używać następujących zmiennych w `leaderboard.format.line`:
-- `{medal}` - Emoji medalu (konfigurowane w sekcji medals)
-- `{rank}` - Numer pozycji (1, 2, 3, itd.)
-- `{player}` - Nazwa gracza
-- `{time}` - Sformatowany czas sesji
-- `{color}` - Kolor pozycji (konfigurowany w sekcji colors)
-
----
-
-### messages.yml
-
-**[English]**
-All plugin messages can be customized in `messages.yml`. This file allows you to translate the plugin to any language or customize message formatting.
-
-**[Polski]**
-Wszystkie wiadomości pluginu można dostosować w `messages.yml`. Ten plik pozwala przetłumaczyć plugin na dowolny język lub dostosować formatowanie wiadomości.
-
-**Example / Przykład:**
-```yaml
-# Plugin prefix
-prefix: "&8[&6SimpleSession&8]&r"
-
-commands:
-  help:
-    header: "&6&l===== &eSimpleSession Commands &6&l====="
-    list:
-      - "&e/simplesession help &7- Show this help menu"
-      - "&e/simplesession info &7- Display plugin information"
-      - "&e/simplesession top &7- Show top sessions leaderboard"
-      - "&e/simplesession reload &7- Reload configuration"
-      - "&e/simplesession debug &7- Toggle debug mode"
-    footer: "&6&l=============================="
-
-  reload:
-    success: "{prefix} &aConfiguration reloaded successfully!"
-    error: "{prefix} &cError reloading configuration!"
-
-  debug:
-    enabled: "{prefix} &aDebug mode enabled!"
-    disabled: "{prefix} &cDebug mode disabled!"
-
-  no-permission: "{prefix} &cYou don't have permission to use this command!"
-```
-
-**Available Placeholders in messages.yml / Dostępne placeholdery w messages.yml:**
-- `{prefix}` - Plugin prefix
-- `{player}` - Player name
-- `{version}` - Plugin version
-- `{size}` - Number value
-- `{placeholderapi}` - PlaceholderAPI status
+- `%simplesession_top_1_name%` - longest current session / najdłuższa bieżąca sesja
+- `%simplesession_top_total_1_name%` - most play time ever / najwięcej czasu gry
+- `%simplesession_top_week_3_time%` - 3rd place this week / 3. miejsce w tym tygodniu
+- `%simplesession_top_record_1_time_long%` - record in the "long" format / rekord w formacie "long"
 
 ---
 
 ## Commands / Komendy
 
-**[English]**
+| Command | Description | Opis | Permission |
+|---------|-------------|------|------------|
+| `/ss help` | Help (only allowed commands) | Pomoc (tylko dostępne komendy) | `simplesession.use` |
+| `/ss info` | Plugin information | Informacje o pluginie | `simplesession.use` |
+| `/ss top [type] [page]` | Leaderboard | Ranking | `simplesession.top` |
+| `/ss check [player]` | Session + statistics (online or offline) | Sesja + statystyki (online i offline) | `simplesession.check`, `simplesession.check.others` |
+| `/ss reset <player> <session\|total\|record\|sessions\|periods\|all>` | Reset session / statistics | Reset sesji / statystyk | `simplesession.reset` |
+| `/ss set <player> <total\|record\|sessions> <value>` | Set a statistic | Ustaw statystykę | `simplesession.modify` |
+| `/ss add <player> <total\|record\|sessions> <value>` | Add to a statistic | Dodaj do statystyki | `simplesession.modify` |
+| `/ss take <player> <total\|record\|sessions> <value>` | Take from a statistic (min 0) | Odejmij od statystyki (min 0) | `simplesession.modify` |
+| `/ss reload` | Reload configuration | Przeładuj konfigurację | `simplesession.reload` |
+| `/ss debug` | Toggle debug mode | Przełącz tryb debugowania | `simplesession.debug` |
 
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/simplesession help` | Display help message | `simplesession.use` |
-| `/simplesession info` | Display plugin information | `simplesession.use` |
-| `/simplesession top` | Show top 10 players by current session time | `simplesession.use` |
-| `/simplesession reload` | Reload configuration | `simplesession.admin` |
-| `/simplesession debug` | Toggle debug mode | `simplesession.admin` |
+**Aliases / Aliasy:** `/simplesession`, `/ss`, `/session`
 
-**Aliases:** `/ss`, `/session`
+Values: seconds (`3600`) or units `w d h m s` (`1h30m`, `2d`). `session` restarts the current session of an online player, `periods` resets today/week/month. Commands work for offline players (statistics are read from the database).
+Wartości: sekundy (`3600`) lub jednostki (`1h30m`, `2d`). `session` restartuje bieżącą sesję gracza online, `periods` resetuje dzień/tydzień/miesiąc. Komendy działają też dla graczy offline.
 
-**[Polski]**
+Leaderboard types for `/ss top`: `session` (default), `total`, `record`, `today`, `week`, `month`, `sessions`, e.g. `/ss top total 2`.
+Typy rankingu: `session` (domyślny), `total`, `record`, `today`, `week`, `month`, `sessions`, np. `/ss top total 2`.
 
-| Komenda | Opis | Uprawnienie |
-|---------|------|-------------|
-| `/simplesession help` | Wyświetla pomoc | `simplesession.use` |
-| `/simplesession info` | Wyświetla informacje o pluginie | `simplesession.use` |
-| `/simplesession top` | Pokazuje top 10 graczy według czasu bieżącej sesji | `simplesession.use` |
-| `/simplesession reload` | Przeładowuje konfigurację | `simplesession.admin` |
-| `/simplesession debug` | Przełącza tryb debugowania | `simplesession.admin` |
+Note: commands that read the database (e.g. `/ss check` of an offline player, `/ss top total`) reply one tick later - in game and in the server console this works normally, but RCON clients do not receive such delayed replies.
+Uwaga: komendy czytające bazę odpowiadają tick później - w grze i w konsoli działa to normalnie, ale klienci RCON nie otrzymują takich odpowiedzi.
 
-**Aliasy:** `/ss`, `/session`
+## Permissions / Uprawnienia
+
+| Permission | Default |
+|------------|---------|
+| `simplesession.use` | `true` |
+| `simplesession.top` | `true` |
+| `simplesession.check` | `true` |
+| `simplesession.check.others` | `true` |
+| `simplesession.reset` | `op` |
+| `simplesession.modify` | `op` |
+| `simplesession.reload` | `op` |
+| `simplesession.debug` | `op` |
+| `simplesession.admin` (all of the above / wszystkie powyższe) | `op` |
 
 ---
 
-## Session Milestones / Kamienie Milowe Sesji
+## Configuration / Konfiguracja
 
-**[English]**
+Every option is described with comments in `config.yml`. The most important sections:
+Każda opcja jest opisana komentarzami w `config.yml`. Najważniejsze sekcje:
 
-Session milestones are achievements that players receive when they reach specific session durations. You can configure custom messages and commands (rewards) for each milestone.
+### Time formats / Formaty czasu
 
-**Example configuration:**
+```yaml
+time-formats:
+  full:                       # smart format
+    smart: true               # false -> uses "pattern"
+    pattern: "{days} dni, {hours} godzin, {minutes} minut, {seconds} sekund"
+    names: long               # preset from smart-formats.unit-names
+    units: [days, hours, minutes, seconds]
+    separator: ", "
+    last-separator: " i "
+    hide-zero: all            # all | leading | none
+    max-units: 0              # 0 = all units
+  compact:                    # "5h 21m"
+    names: short
+    unit-format: "{value}{unit}"
+    separator: " "
+    max-units: 2
+  clock: "{total_hours}:{minutes_pad}:{seconds_pad}"   # plain pattern
+
+default-format: "full"        # format of %simplesession_formatted%
+
+smart-formats:
+  enabled: true               # false = smart formatting off everywhere
+  plural-rule: polish         # polish | english | none
+  unit-names:                 # presets used by "names:" - long, short, english or your own
+    long:
+      hours: ["godzina", "godziny", "godzin"]   # [1, 2-4, 5+]
+      # ...
+    english:
+      hours: ["hour", "hours"]
+      # ...
+
+display:                      # which format is used where
+  leaderboard-command: compact
+  leaderboard-placeholder: compact
+  stats-placeholder: long
+  check-command: full
+  milestone: long
+  relog-message: compact
+```
+
+Pattern variables / Zmienne wzorca: `{days} {hours} {minutes} {seconds}`, `{total_days} {total_hours} {total_minutes} {total_seconds}`, `{hours_pad} {minutes_pad} {seconds_pad}`, `{days_name} {hours_name} {minutes_name} {seconds_name}`.
+
+Smart format options / Opcje formatu smart: `smart`, `pattern`, `names`, `units` (`weeks`, `days`, `hours`, `minutes`, `seconds`), `unit-format`, `separator`, `last-separator`, `max-units`, `hide-zero`, `zero`, `plural-rule`.
+
+Bundled formats / Wbudowane formaty (3665 s):
+
+| Format | Output / Wynik |
+|--------|----------------|
+| `full` | 1 godzina, 1 minuta i 5 sekund |
+| `short` | 1h 1m 5s |
+| `compact` | 1h 1m |
+| `long` | 1 godzina i 1 minuta |
+| `clock` | 1:01:05 |
+| `custom` | 0d 1h 1m 5s |
+
+### Relog protection / Ochrona przed relogiem
+
+```yaml
+session:
+  keep-on-reload: true        # sessions survive /reload
+relog-protection:
+  enabled: true
+  grace-period: 60            # seconds a player may be offline
+  count-offline-time: false   # count the offline time into the session
+  keep-after-restart: false   # also after a restart (within grace-period)
+```
+
+A restored session does not count as a new session in statistics and does not grant milestones again. The message `session.restored` in `messages.yml` (`{time}` = session, `{offline}` = time offline) is sent to the player - set it to `""` to disable.
+Przywrócona sesja nie liczy się jako nowa w statystykach i nie przyznaje ponownie kamieni milowych. Gracz dostaje wiadomość `session.restored` (`{time}` = sesja, `{offline}` = czas offline) - ustaw `""`, aby ją wyłączyć.
+
+### Statistics / Statystyki
+
+```yaml
+stats:
+  enabled: true
+  storage:
+    file: "stats.db"
+    table-prefix: "ss_"
+  save-interval: 60
+  timezone: "system"          # or e.g. "Europe/Warsaw"
+  week-start: MONDAY
+  date-format: "dd.MM.yyyy HH:mm"
+  history-days: 400           # daily history kept (min 32, 0 = forever)
+```
+
+### Leaderboard / Ranking
+
+```yaml
+leaderboard:
+  top-size: 10                # per page
+  placeholder-cache-size: 100
+  refresh-interval: 60
+  title: "&6&l✪ TOP {size} &8- &e{type}"    # {size}, {type}, {page}, {pages}
+  type-names: { session: "Bieżące sesje", total: "Łączny czas gry", ... }
+  format:
+    header: "..."
+    separator: "..."
+    line: "&7║ {medal} {rank}. {player} &7- {color}{time}"   # also {value}
+    footer: "..."
+    count: "{value}"                            # {time} of the "sessions" leaderboard
+    navigation: "&7Strona &e{page}&7/&e{pages}{next}"
+    next-page: " &8| &7Dalej: &e/ss top {type} {next_page}"
+    medals: { first: "&6❶", second: "&7❷", third: "&c❸", other: "&8•" }
+    colors: { first: "&6", second: "&7", third: "&c", other: "&f" }
+
+placeholders:                 # texts returned by placeholders / teksty zwracane przez placeholdery
+  empty-name: ""              # empty leaderboard position / pusta pozycja
+  empty-time: ""
+  unranked: "-"               # player not in a ranking / gracz poza rankingiem
+  unavailable: "-"            # statistics disabled / not loaded / statystyki niedostępne
+```
+
+### Milestones / Kamienie milowe
+
 ```yaml
 milestones:
   enabled: true
-  check-interval: 60  # Check every 60 seconds
+  check-interval: 10
   list:
     one_hour:
-      time: 3600  # 1 hour in seconds
-      message: "&6&lWOW! &eFull hour on the server! &6⭐"
+      time: 3600              # or "1h"
+      message: "&6WOW! &ePełna godzina na serwerze!"
+      broadcast: "&e{player} &7gra już &e1 godzinę!"
+      permission: ""          # optional
       commands:
-        - "broadcast &e{player} &7has been playing for &e1 hour&7!"
-        - "give {player} diamond 1"
+        - "give {player} diamond 1"            # console
+        - "[player] spawn"
+        - "[broadcast] &e{player} is great!"
+        - "[message] &aText"
+        - "[actionbar] &6+1 hour!"
+        - "[title] &6WOW!;&e{time}"
+        - "[sound] entity.player.levelup;1;1"
 ```
 
-**Available placeholders in milestone messages:**
-- `{player}` - Player name
-- `{uuid}` - Player UUID
-- `{time}` - Formatted milestone time
+Placeholders: `{player}`, `{uuid}`, `{time}` (milestone time), `{session}` (current session) and PlaceholderAPI placeholders. Achieved milestones are kept when the session is restored.
+Osiągnięte kamienie milowe są zachowywane przy przywróceniu sesji.
 
-**[Polski]**
+### messages.yml
 
-Kamienie milowe sesji to osiągnięcia które gracze otrzymują gdy osiągną określony czas sesji. Możesz skonfigurować własne wiadomości i komendy (nagrody) dla każdego kamienia milowego.
-
-**Przykładowa konfiguracja:**
-```yaml
-milestones:
-  enabled: true
-  check-interval: 60  # Sprawdzaj co 60 sekund
-  list:
-    one_hour:
-      time: 3600  # 1 godzina w sekundach
-      message: "&6&lWOW! &ePełna godzina na serwerze! &6⭐"
-      commands:
-        - "broadcast &e{player} &7gra już &e1 godzinę&7!"
-        - "give {player} diamond 1"
-```
-
-**Dostępne placeholdery w wiadomościach milestone:**
-- `{player}` - Nazwa gracza
-- `{uuid}` - UUID gracza
-- `{time}` - Sformatowany czas milestone
+All texts can be changed (default language: Polish); `{prefix}` works in every message, colors `&a` and `&#RRGGBB` are supported and an empty message (`""`) is not sent. Placeholders available in each message are described next to it in the file. `/ss check` is built from `commands.check.lines` and `commands.check.stats-lines` (the second list is shown only when statistics are enabled).
+Wszystkie teksty można zmienić (domyślnie po polsku); `{prefix}` działa w każdej wiadomości, obsługiwane są kolory `&a` i `&#RRGGBB`, a pusta wiadomość nie jest wysyłana. Placeholdery dostępne w wiadomości są opisane obok niej w pliku. `/ss check` składa się z `commands.check.lines` i `commands.check.stats-lines` (druga lista tylko przy włączonych statystykach).
 
 ---
 
 ## Building / Budowanie
 
-**[English]**
-To build the plugin from source:
-
 ```bash
 mvn clean package
 ```
 
-The compiled JAR will be located in the `target` folder.
-
-**[Polski]**
-Aby zbudować plugin ze źródeł:
-
-```bash
-mvn clean package
-```
-
-Skompilowany plik JAR będzie znajdował się w folderze `target`.
-
----
-
-## Permissions / Uprawnienia
-
-| Permission | Description (English) | Opis (Polski) | Default |
-|------------|----------------------|---------------|---------|
-| `simplesession.use` | Allows basic usage of SimpleSession commands | Pozwala na podstawowe użycie komend | `true` |
-| `simplesession.admin` | Access to admin commands (reload, debug) | Dostęp do komend administracyjnych | `op` |
-
----
-
-## Support / Wsparcie
-
-**[English]**
-If you encounter any issues or have suggestions, please create an issue on GitHub.
-
-**[Polski]**
-Jeśli napotkasz jakiekolwiek problemy lub masz sugestie, utwórz issue na GitHubie.
+The JAR is created in `target/`. Unit tests (formats, parser, SQLite storage, statistics) run during the build.
+Plik JAR powstaje w `target/`. Testy jednostkowe uruchamiają się podczas budowania.
 
 ---
 
 ## License / Licencja
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-Ten projekt jest objęty licencją MIT - szczegóły w pliku [LICENSE](LICENSE).
-
----
+MIT - see [LICENSE](LICENSE).
 
 ## Author / Autor
 
@@ -389,30 +373,25 @@ Ten projekt jest objęty licencją MIT - szczegóły w pliku [LICENSE](LICENSE).
 
 ## Version History / Historia Wersji
 
+### 2.0.0
+- Persistent statistics (SQLite): total, record, sessions, today/week/month, average, first join, last seen
+- Leaderboards for every statistic with pages, new placeholders `stats_*`, `rank_<type>`, `top_<type>_<n>_*`
+- Commands `/ss check`, `/ss reset`, `/ss set|add|take`, `/ss top [type] [page]`
+- Relog protection, sessions kept after `/reload` (and optionally after a restart)
+- Smart time formats with plural forms, named formats, `display` section, `formatted_<format>` placeholder
+- Milestones: `broadcast`, `permission`, action prefixes, `{session}`, PlaceholderAPI, durations like `"30m"`
+- Fixed: `{prefix}` was never replaced in messages
+- Fixed: `{uuid}` in milestone messages and `{time}` in milestone commands were not replaced
+- Fixed: default milestone commands used `/broadcast`, which does not exist on plain Spigot/Paper (old configs still work)
+- Fixed: session started at MONITOR priority, so other plugins saw 0 in their join handlers
+- Fixed: possible NullPointerException when placeholders were requested asynchronously
+- Fixed: `/ss debug` rewrote the whole config.yml (quotes removed, manual edits overwritten)
+- Fixed: `/ss help` showed admin commands to everyone, "Disabled" status was green, top placeholders limited to 10
+- Leaderboard medals use characters available in the default Minecraft font
+- Automatic config/messages update with backup
+- Changed: default messages are in Polish; `commands.help.list` → `commands.help.entries`, `commands.info.lines` → `commands.info.content`
+- Changed: permissions split into `simplesession.top`, `.check`, `.check.others`, `.reset`, `.modify`, `.reload`, `.debug` (`simplesession.admin` grants all)
+- Changed: default milestone `check-interval` is 10 seconds
+
 ### 1.0.0
 - Initial release
-- Session tracking system (from join to quit/restart)
-- PlaceholderAPI integration with 33 placeholders:
-  - 13 basic placeholders (time components, formatted times, rank)
-  - 20 leaderboard placeholders (top_1_name through top_10_name, top_1_time through top_10_time)
-- Session milestones with customizable rewards and messages
-- Top 10 leaderboard command (`/simplesession top`)
-- Player ranking system (`%simplesession_rank%` placeholder)
-- Leaderboard placeholders for holograms
-- Fully customizable leaderboard display:
-  - Configurable header, separator, line format, and footer
-  - Custom medals for top 3 positions
-  - Custom colors for each rank
-  - Support for placeholders: {medal}, {rank}, {player}, {time}, {color}
-- Customizable time display formats
-- Smart caching system for optimal performance (90% reduction in sorting operations)
-- Automatic cache invalidation on player join/quit
-- Admin commands (reload, debug, info)
-- Full Polish and English documentation
-- MIT License
-
----
-
-**[English]** Thank you for using SimpleSession!
-
-**[Polski]** Dziękujemy za korzystanie z SimpleSession!

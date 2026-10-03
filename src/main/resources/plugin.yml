@@ -12,14 +12,44 @@ softdepend:
 commands:
   simplesession:
     description: Main SimpleSession command
-    usage: /<command> [help|info|reload|debug]
+    usage: /<command> [help|info|top|check|reset|set|add|take|reload|debug]
     aliases: [ss, session]
     permission: simplesession.use
 
 permissions:
   simplesession.use:
-    description: Allows basic usage of SimpleSession commands
+    description: Allows basic usage of SimpleSession commands (help, info)
     default: true
+  simplesession.top:
+    description: Allows /ss top
+    default: true
+  simplesession.check:
+    description: Allows /ss check (own session and statistics)
+    default: true
+  simplesession.check.others:
+    description: Allows /ss check <player>
+    default: true
+  simplesession.reset:
+    description: Allows /ss reset
+    default: op
+  simplesession.modify:
+    description: Allows /ss set, /ss add, /ss take
+    default: op
+  simplesession.reload:
+    description: Allows /ss reload
+    default: op
+  simplesession.debug:
+    description: Allows /ss debug
+    default: op
   simplesession.admin:
     description: Access to all SimpleSession admin commands
     default: op
+    children:
+      simplesession.use: true
+      simplesession.top: true
+      simplesession.check: true
+      simplesession.check.others: true
+      simplesession.reset: true
+      simplesession.modify: true
+      simplesession.reload: true
+      simplesession.debug: true

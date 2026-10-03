@@ -1,216 +1,277 @@
 package pl.tremeq.simplesession.placeholder;
 
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
-import org.bukkit.entity.Player;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import pl.tremeq.simplesession.SimpleSession;
-import pl.tremeq.simplesession.manager.SessionManager;
+import pl.tremeq.simplesession.format.FormatManager;
+import pl.tremeq.simplesession.format.TimeFormat;
+import pl.tremeq.simplesession.session.Session;
+import pl.tremeq.simplesession.session.SessionManager;
+import pl.tremeq.simplesession.stats.LeaderboardEntry;
+import pl.tremeq.simplesession.stats.PlayerStats;
+import pl.tremeq.simplesession.stats.StatType;
+import pl.tremeq.simplesession.stats.StatsManager;
+import pl.tremeq.simplesession.util.Text;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 /**
- * PlaceholderAPI expansion for SimpleSession.
+ * PlaceholderAPI expansion for SimpleSession. Safe to call from async threads.
  *
- * Provides placeholders for displaying player session time in various formats.
- *
- * Available placeholders:
- * - %simplesession_seconds% - Remaining seconds (0-59)
- * - %simplesession_minutes% - Remaining minutes (0-59)
- * - %simplesession_hours% - Remaining hours (0-23)
- * - %simplesession_days% - Total days
- * - %simplesession_total_seconds% - Total session duration in seconds
- * - %simplesession_total_minutes% - Total session duration in minutes
- * - %simplesession_total_hours% - Total session duration in hours
- * - %simplesession_total_days% - Total session duration in days
- * - %simplesession_formatted% - Formatted time using default format
- * - %simplesession_formatted_full% - Formatted time using full format
- * - %simplesession_formatted_short% - Formatted time using short format
- * - %simplesession_formatted_custom% - Formatted time using custom format
- * - %simplesession_rank% - Player's rank in current session leaderboard
+ * Current session:
+ *   seconds, minutes, hours, days, total_seconds, total_minutes, total_hours, total_days,
+ *   formatted, formatted_<format>, rank, rank_<type>
+ * Persistent statistics (stats.enabled):
+ *   stats_<total|record|today|week|month|average>[_seconds|_formatted_<format>],
+ *   stats_sessions, stats_first_join, stats_last_seen
+ * Leaderboards:
+ *   top_<n>_<name|time|value>                 (current sessions)
+ *   top_<type>_<n>_<name|time|value>          (session, total, record, today, week, month, sessions)
+ *   top_<type>_<n>_time_<format>              (time with a chosen format)
  *
  * @author TremeQ
  */
 public class SimpleSessionExpansion extends PlaceholderExpansion {
 
+    private static final String[] STAT_TIME_KEYS = {"total", "record", "today", "week", "month", "average"};
+    private static final List<String> TEXT_PATHS = List.of(
+            "placeholders.empty-name", "placeholders.empty-time", "placeholders.unranked", "placeholders.unavailable");
+
     private final SimpleSession plugin;
+    private volatile Map<String, String> texts = Map.of();
 
     /**
-     * Creates a new PlaceholderAPI expansion for SimpleSession.
-     *
      * @param plugin The main plugin instance
      */
     public SimpleSessionExpansion(SimpleSession plugin) {
         this.plugin = plugin;
+        reload();
     }
 
-    /**
-     * Gets the identifier for this expansion.
-     *
-     * @return The identifier string
-     */
     @Override
     @NotNull
     public String getIdentifier() {
         return "simplesession";
     }
 
-    /**
-     * Gets the author of this expansion.
-     *
-     * @return The author name
-     */
     @Override
     @NotNull
     public String getAuthor() {
         return "TremeQ";
     }
 
-    /**
-     * Gets the version of this expansion.
-     *
-     * @return The version string
-     */
     @Override
     @NotNull
     public String getVersion() {
         return plugin.getDescription().getVersion();
     }
 
-    /**
-     * Indicates that this expansion should persist through reloads.
-     *
-     * @return true to persist
-     */
     @Override
     public boolean persist() {
         return true;
     }
 
-    /**
-     * Handles placeholder requests.
-     *
-     * @param player The player for which the placeholder is being requested
-     * @param params The placeholder parameters (after %simplesession_)
-     * @return The placeholder value, or null if invalid
-     */
     @Override
     @Nullable
-    public String onPlaceholderRequest(Player player, @NotNull String params) {
-        SessionManager sessionManager = plugin.getSessionManager();
-        String lowerParams = params.toLowerCase();
+    public String onRequest(OfflinePlayer player, @NotNull String params) {
+        String key = params.toLowerCase(Locale.ROOT);
+        UUID id = player == null ? null : player.getUniqueId();
 
-        // Handle top leaderboard placeholders (don't require player)
-        if (lowerParams.startsWith("top_")) {
-            return handleTopPlaceholder(lowerParams, sessionManager);
+        if (key.startsWith("top_")) {
+            return top(key.substring(4));
+        }
+        if (key.startsWith("stats_")) {
+            return stats(id, key.substring(6));
+        }
+        if (key.equals("rank")) {
+            return rank(id, StatType.SESSION);
+        }
+        if (key.startsWith("rank_")) {
+            StatType type = StatType.byKey(key.substring(5));
+            return type == null ? null : rank(id, type);
         }
 
-        // All other placeholders require a player
-        if (player == null) {
-            return "";
-        }
-
-        UUID playerId = player.getUniqueId();
-
-        // Check if player has an active session
-        if (!sessionManager.hasActiveSession(playerId)) {
-            return "0";
-        }
-
-        // Parse the placeholder request
-        switch (lowerParams) {
-            // Individual time components (remaining)
+        // Current session: players without a session (offline / null) are treated as 0 seconds
+        long seconds = plugin.getSessionManager().getSessionSeconds(id);
+        FormatManager formats = plugin.getFormatManager();
+        switch (key) {
             case "seconds":
-                return String.valueOf(sessionManager.getRemainingSeconds(playerId));
-
+                return String.valueOf(seconds % 60);
             case "minutes":
-                return String.valueOf(sessionManager.getRemainingMinutes(playerId));
-
+                return String.valueOf((seconds / 60) % 60);
             case "hours":
-                return String.valueOf(sessionManager.getRemainingHours(playerId));
-
+                return String.valueOf((seconds / 3600) % 24);
             case "days":
-                return String.valueOf(sessionManager.getSessionDays(playerId));
-
-            // Total time in different units
-            case "total_seconds":
-                return String.valueOf(sessionManager.getSessionSeconds(playerId));
-
-            case "total_minutes":
-                return String.valueOf(sessionManager.getSessionMinutes(playerId));
-
-            case "total_hours":
-                return String.valueOf(sessionManager.getSessionHours(playerId));
-
             case "total_days":
-                return String.valueOf(sessionManager.getSessionDays(playerId));
-
-            // Formatted time strings
+                return String.valueOf(seconds / 86400);
+            case "total_seconds":
+                return String.valueOf(seconds);
+            case "total_minutes":
+                return String.valueOf(seconds / 60);
+            case "total_hours":
+                return String.valueOf(seconds / 3600);
             case "formatted":
-                return sessionManager.getFormattedSessionTime(playerId);
-
-            case "formatted_full":
-                return sessionManager.getFormattedSessionTime(playerId, "full");
-
-            case "formatted_short":
-                return sessionManager.getFormattedSessionTime(playerId, "short");
-
-            case "formatted_custom":
-                return sessionManager.getFormattedSessionTime(playerId, "custom");
-
-            // Ranking
-            case "rank":
-                int rank = sessionManager.getPlayerRank(playerId);
-                return rank > 0 ? String.valueOf(rank) : "N/A";
-
+                return formats.formatDefault(seconds);
             default:
-                // Return null for unknown placeholders
-                return null;
+                break;
         }
+        if (key.startsWith("formatted_")) {
+            TimeFormat format = formats.get(key.substring(10));
+            return format == null ? null : format.format(seconds);
+        }
+        return null;
+    }
+
+    private String rank(UUID id, StatType type) {
+        int rank;
+        if (type == StatType.SESSION) {
+            rank = plugin.getSessionManager().getRank(id);
+        } else {
+            StatsManager stats = plugin.getStatsManager();
+            if (!stats.isEnabled()) {
+                return text("placeholders.unavailable");
+            }
+            rank = id == null ? 0 : stats.cachedRank(id, type);
+        }
+        return rank > 0 ? String.valueOf(rank) : text("placeholders.unranked");
+    }
+
+    private String stats(UUID id, String key) {
+        StatsManager stats = plugin.getStatsManager();
+        if (!stats.isEnabled()) {
+            return text("placeholders.unavailable");
+        }
+        PlayerStats playerStats = stats.get(id);
+        if (playerStats == null) {
+            return text("placeholders.unavailable");
+        }
+        switch (key) {
+            case "sessions":
+                return String.valueOf(stats.live(playerStats, StatType.SESSIONS));
+            case "first_join":
+                return stats.periods().formatDate(playerStats.firstJoin(), text("placeholders.unavailable"));
+            case "last_seen":
+                return stats.periods().formatDate(playerStats.lastSeen(), text("placeholders.unavailable"));
+            default:
+                break;
+        }
+        for (String timeKey : STAT_TIME_KEYS) {
+            if (!key.startsWith(timeKey)) {
+                continue;
+            }
+            long value = timeKey.equals("average")
+                    ? playerStats.liveAverage(System.currentTimeMillis())
+                    : stats.live(playerStats, StatType.byKey(timeKey));
+            String rest = key.substring(timeKey.length());
+            if (rest.isEmpty()) {
+                return plugin.getFormatManager().display("stats-placeholder", value);
+            }
+            if (rest.equals("_seconds")) {
+                return String.valueOf(value);
+            }
+            if (rest.startsWith("_formatted_")) {
+                TimeFormat format = plugin.getFormatManager().get(rest.substring(11));
+                return format == null ? null : format.format(value);
+            }
+        }
+        return null;
     }
 
     /**
-     * Handles top leaderboard placeholders.
-     * Format: top_<position>_<type> where type is 'name' or 'time'
-     *
-     * @param params Placeholder parameters
-     * @param sessionManager SessionManager instance
-     * @return Placeholder value, or empty string if invalid
+     * Handles top_<n>_<field> and top_<type>_<n>_<field>[_<format>].
      */
-    private String handleTopPlaceholder(String params, SessionManager sessionManager) {
-        // Expected format: top_1_name or top_1_time
-        String[] parts = params.split("_");
-
-        // Validate format: should have exactly 3 parts (top, number, type)
-        if (parts.length != 3) {
+    private String top(String key) {
+        String[] parts = key.split("_");
+        int index = 0;
+        StatType type = StatType.SESSION;
+        if (parts.length > 0 && StatType.byKey(parts[0]) != null) {
+            type = StatType.byKey(parts[0]);
+            index = 1;
+        }
+        if (parts.length < index + 2) {
             return "";
         }
-
-        // Parse position number
         int position;
         try {
-            position = Integer.parseInt(parts[1]);
+            position = Integer.parseInt(parts[index]);
         } catch (NumberFormatException e) {
             return "";
         }
-
-        // Validate position is in range 1-10
-        if (position < 1 || position > 10) {
+        String field = parts[index + 1];
+        String formatName = parts.length > index + 2
+                ? String.join("_", Arrays.copyOfRange(parts, index + 2, parts.length)) : null;
+        if (position < 1 || (formatName != null && !field.equals("time"))) {
             return "";
         }
 
-        // Get type (name or time)
-        String type = parts[2];
-
-        switch (type) {
-            case "name":
-                return sessionManager.getTopPlayerName(position);
-
-            case "time":
-                return sessionManager.getTopPlayerTime(position);
-
-            default:
-                return "";
+        LeaderboardEntry entry = entry(type, position);
+        if (entry == null) {
+            if (type.isPersistent() && !plugin.getStatsManager().isEnabled()) {
+                return text("placeholders.unavailable");
+            }
+            return switch (field) {
+                case "name" -> text("placeholders.empty-name");
+                case "time", "value" -> text("placeholders.empty-time");
+                default -> "";
+            };
         }
+        return switch (field) {
+            case "name" -> entry.name();
+            case "value" -> String.valueOf(entry.value());
+            case "time" -> {
+                if (!type.isTime()) {
+                    yield String.valueOf(entry.value());
+                }
+                if (formatName != null) {
+                    TimeFormat format = plugin.getFormatManager().get(formatName);
+                    yield format == null ? "" : format.format(entry.value());
+                }
+                yield plugin.getFormatManager().display("leaderboard-placeholder", entry.value());
+            }
+            default -> "";
+        };
+    }
+
+    private LeaderboardEntry entry(StatType type, int position) {
+        if (type == StatType.SESSION) {
+            SessionManager sessions = plugin.getSessionManager();
+            List<Session> sorted = sessions.getSorted();
+            if (position > sorted.size()) {
+                return null;
+            }
+            Session session = sorted.get(position - 1);
+            return new LeaderboardEntry(session.uuid(), session.name(), session.seconds(System.currentTimeMillis()));
+        }
+        StatsManager stats = plugin.getStatsManager();
+        if (!stats.isEnabled()) {
+            return null;
+        }
+        List<LeaderboardEntry> cached = stats.cached(type);
+        return position > cached.size() ? null : cached.get(position - 1);
+    }
+
+    private String text(String path) {
+        return texts.getOrDefault(path, "");
+    }
+
+    /**
+     * Caches texts from config.yml so async placeholder requests never touch the configuration.
+     */
+    public void reload() {
+        FileConfiguration config = plugin.getConfig();
+        Map<String, String> loaded = new HashMap<>();
+        for (String path : TEXT_PATHS) {
+            String value = config.getString(path);
+            loaded.put(path, value == null ? "" : Text.color(value));
+        }
+        texts = Map.copyOf(loaded);
     }
 }

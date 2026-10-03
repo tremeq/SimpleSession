@@ -4,166 +4,327 @@
 # Author: TremeQ
 # https://github.com/TremeQ/SimpleSession
 #
-# === AVAILABLE PLACEHOLDERS / DOSTĘPNE PLACEHOLDERY ===
-# Individual components / Pojedyncze wartości:
-#   %simplesession_seconds%       - Seconds (0-59) / Sekundy
-#   %simplesession_minutes%       - Minutes (0-59) / Minuty
-#   %simplesession_hours%         - Hours (0-23) / Godziny
-#   %simplesession_days%          - Days / Dni
+# Full placeholder list / Pełna lista placeholderów: README.md
 #
-# Total time / Całkowity czas:
-#   %simplesession_total_seconds% - Total seconds / Wszystkie sekundy
-#   %simplesession_total_minutes% - Total minutes / Wszystkie minuty
-#   %simplesession_total_hours%   - Total hours / Wszystkie godziny
-#   %simplesession_total_days%    - Total days / Wszystkie dni
+# === MOST USED PLACEHOLDERS / NAJCZĘŚCIEJ UŻYWANE ===
+# Current session / Bieżąca sesja:
+#   %simplesession_formatted%              - session in default-format / sesja w formacie domyślnym
+#   %simplesession_formatted_<format>%     - session in any format below, e.g. _compact / w dowolnym formacie
+#   %simplesession_seconds% / _minutes% / _hours% / _days%   - components / składowe
+#   %simplesession_total_seconds% / _total_minutes% / _total_hours% / _total_days%
+#   %simplesession_rank%                   - position by current session / pozycja wg bieżącej sesji
 #
-# Formatted / Sformatowane:
-#   %simplesession_formatted%        - Default format / Domyślny
-#   %simplesession_formatted_full%   - Full format / Pełny
-#   %simplesession_formatted_short%  - Short format / Krótki
-#   %simplesession_formatted_custom% - Custom format / Własny
+# Statistics (stats.enabled) / Statystyki:
+#   %simplesession_stats_total%            - all-time play time / łączny czas gry
+#   %simplesession_stats_record%           - longest session / najdłuższa sesja
+#   %simplesession_stats_today% / _week% / _month% / _average%
+#   %simplesession_stats_sessions%         - number of sessions / liczba sesji
+#   %simplesession_stats_first_join% / %simplesession_stats_last_seen%
+#   add _seconds or _formatted_<format> to time values / dodaj _seconds lub _formatted_<format>
+#   %simplesession_rank_<type>%            - position in a ranking / pozycja w rankingu
 #
-# Ranking & Leaderboard / Ranking i Topka:
-#   %simplesession_rank%             - Your rank / Twoja pozycja
-#   %simplesession_top_1_name%       - Top 1 player name / Nazwa gracza #1
-#   %simplesession_top_1_time%       - Top 1 session time / Czas sesji #1
-#   %simplesession_top_2_name%       - Top 2 player name / Nazwa gracza #2
-#   %simplesession_top_2_time%       - Top 2 session time / Czas sesji #2
-#   ... (supports top_1 through top_10 / wspiera od top_1 do top_10)
-#
-# Example usage / Przykład:
-#   Your session: %simplesession_formatted%
-#   Time: %simplesession_hours%h %simplesession_minutes%m
-#   Hologram: #1 %simplesession_top_1_name% - %simplesession_top_1_time%
+# Leaderboards / Topki (holograms):
+#   %simplesession_top_<n>_name%  %simplesession_top_<n>_time%           - current sessions
+#   %simplesession_top_<type>_<n>_name% / _time% / _value%               - type: session, total,
+#                                                                          record, today, week, month, sessions
 # ============================================
 
-# Time display formats / Formaty wyświetlania
-# Variables / Zmienne: {days}, {hours}, {minutes}, {seconds}
-time-formats:
-  # Full / Pełny: "2 days, 5 hours, 21 minutes, 12 seconds"
-  full: "{days} dni, {hours} godzin, {minutes} minut, {seconds} sekund"
+# Do not change / Nie zmieniaj
+config-version: 2
 
-  # Short / Krótki: "2d 5h 21m 12s"
-  short: "{days}d {hours}h {minutes}m {seconds}s"
+# ============================================
+#               TIME FORMATS
+# ============================================
+# Named time formats. Every place in the plugin uses one of them (see "display" below),
+# and any of them can be used in placeholders: %simplesession_formatted_<name>%.
+#
+# A format can be:
+#  1) a plain PATTERN text (classic format), variables:
+#       {days} {hours} {minutes} {seconds}                    - components (hours 0-23, minutes/seconds 0-59)
+#       {total_days} {total_hours} {total_minutes} {total_seconds} - whole time in one unit
+#       {hours_pad} {minutes_pad} {seconds_pad}               - 2 digits (05)
+#       {days_name} {hours_name} {minutes_name} {seconds_name} - unit name with correct plural form
+#  2) a SMART format section (only meaningful units, correct plural forms):
+#       smart: true/false          - false = use "pattern" instead / false = użyj "pattern"
+#       pattern: "..."             - used when smart is off / używany gdy smart jest wyłączony
+#       names: long                - unit names preset from smart-formats.unit-names
+#       units: [days, hours, minutes, seconds] - units to use (weeks, days, hours, minutes, seconds)
+#       unit-format: "{value} {unit}"
+#       separator: ", "            - between units / między jednostkami
+#       last-separator: " i "      - before the last unit / przed ostatnią jednostką
+#       max-units: 0               - max units counted from the largest one, 0 = all / 0 = wszystkie
+#       hide-zero: all             - all = hide every 0 unit, leading = only leading zeros, none = never
+#       zero: "0 sekund"           - text for 0 seconds (optional) / tekst dla 0 sekund
+#       plural-rule: polish        - optional, overrides smart-formats.plural-rule
+#
+# Formaty czasu. Każde miejsce w pluginie korzysta z jednego z nich (sekcja "display"),
+# a każdy można użyć w placeholderze %simplesession_formatted_<nazwa>%.
+time-formats:
+  # "2 dni, 5 godzin, 21 minut i 12 sekund" / "1 godzina i 5 minut" / "45 sekund"
+  full:
+    smart: true
+    pattern: "{days} dni, {hours} godzin, {minutes} minut, {seconds} sekund"
+    names: long
+    units: [days, hours, minutes, seconds]
+    separator: ", "
+    last-separator: " i "
+    hide-zero: all
+    max-units: 0
+
+  # "2d 5h 21m 12s" / "5m 3s"
+  short:
+    smart: true
+    pattern: "{days}d {hours}h {minutes}m {seconds}s"
+    names: short
+    unit-format: "{value}{unit}"
+    separator: " "
+    hide-zero: all
+
+  # Two most important units / Dwie najważniejsze jednostki: "5h 21m", "3m 10s", "8s"
+  compact:
+    smart: true
+    pattern: "{total_hours}h {minutes}m"
+    names: short
+    unit-format: "{value}{unit}"
+    separator: " "
+    max-units: 2
+
+  # Long names, two units / Długie nazwy, dwie jednostki: "5 godzin i 21 minut"
+  long:
+    smart: true
+    pattern: "{total_hours} godzin {minutes} minut"
+    names: long
+    separator: ", "
+    last-separator: " i "
+    max-units: 2
+
+  # Clock / Zegar: "125:04:09"
+  clock: "{total_hours}:{minutes_pad}:{seconds_pad}"
 
   # Custom / Własny - edit as you like / edytuj dowolnie
-  # Examples / Przykłady:
-  #   "{hours}:{minutes}:{seconds}"
-  #   "{days} days | {hours}h"
   custom: "{days}d {hours}h {minutes}m {seconds}s"
 
-# Default format for %simplesession_formatted%
-# Options / Opcje: full, short, custom
+# Default format for %simplesession_formatted% (any name from time-formats)
+# Domyślny format dla %simplesession_formatted%
 default-format: "full"
+
+# Smart format settings / Ustawienia inteligentnych formatów
+smart-formats:
+  # false = every format uses its "pattern" (smart formatting off everywhere)
+  # false = wszystkie formaty używają "pattern" (wyłącza inteligentne formaty wszędzie)
+  enabled: true
+
+  # Plural rule: polish (1 minuta, 2 minuty, 5 minut), english (1 minute, 2 minutes), none
+  plural-rule: polish
+
+  # Unit names presets: [one, few, many] (polish) or [one, other] (english)
+  # Zestawy nazw jednostek: [1, 2-4, 5+]
+  unit-names:
+    long:
+      weeks: ["tydzień", "tygodnie", "tygodni"]
+      days: ["dzień", "dni", "dni"]
+      hours: ["godzina", "godziny", "godzin"]
+      minutes: ["minuta", "minuty", "minut"]
+      seconds: ["sekunda", "sekundy", "sekund"]
+    short:
+      weeks: "w"
+      days: "d"
+      hours: "h"
+      minutes: "m"
+      seconds: "s"
+    english:
+      weeks: ["week", "weeks"]
+      days: ["day", "days"]
+      hours: ["hour", "hours"]
+      minutes: ["minute", "minutes"]
+      seconds: ["second", "seconds"]
+
+# Which format is shown where / Który format jest pokazywany gdzie
+display:
+  leaderboard-command: compact       # /ss top
+  leaderboard-placeholder: compact   # %simplesession_top_..._time%
+  stats-placeholder: long            # %simplesession_stats_total% etc.
+  check-command: full                # /ss check, /ss set|add|take
+  milestone: long                    # {time} and {session} in milestones
+  relog-message: compact             # message after relog protection restored the session
 
 # Debug mode (shows extra info in console)
 # Tryb debugowania (pokazuje dodatkowe info w konsoli)
 debug: false
 
 # ============================================
+#             SESSIONS / SESJE
+# ============================================
+session:
+  # Keep sessions of online players after /reload or a plugin reload
+  # Zachowaj sesje graczy online po /reload lub przeładowaniu pluginu
+  keep-on-reload: true
+
+# Relog protection: a player who comes back within the grace period continues the old session
+# Ochrona przed relogiem: gracz który wróci w wyznaczonym czasie kontynuuje poprzednią sesję
+relog-protection:
+  enabled: true
+  # Seconds a player may be offline without losing the session
+  # Ile sekund gracz może być poza serwerem bez utraty sesji
+  grace-period: 60
+  # true = time spent offline counts into the session, false = it is skipped
+  # true = czas poza serwerem wlicza się do sesji, false = jest pomijany
+  count-offline-time: false
+  # Also keep sessions after a server restart (if players return within grace-period)
+  # Zachowaj sesje także po restarcie serwera (jeśli gracz wróci w czasie grace-period)
+  keep-after-restart: false
+
+# ============================================
+#     PERSISTENT STATISTICS / STATYSTYKI
+# ============================================
+# Stored in SQLite (driver bundled with Spigot/Paper - nothing to install).
+# Przechowywane w SQLite (sterownik jest wbudowany w Spigot/Paper).
+stats:
+  enabled: true
+  storage:
+    # Database file in plugins/SimpleSession (change requires restart)
+    file: "stats.db"
+    table-prefix: "ss_"
+  # How often online players are saved (seconds) / Jak często zapisywać graczy online (sekundy)
+  save-interval: 60
+  # Time zone for today / week / month ("system" or e.g. "Europe/Warsaw")
+  timezone: "system"
+  # First day of the week / Pierwszy dzień tygodnia (MONDAY ... SUNDAY)
+  week-start: MONDAY
+  # Date format for first join / last seen
+  date-format: "dd.MM.yyyy HH:mm"
+  # Days of daily history kept (min 32, 0 = forever) / Ile dni historii dziennej trzymać
+  history-days: 400
+
+# ============================================
 #         LEADERBOARD / RANKING
 # ============================================
-# Configuration for /simplesession top command
-# Konfiguracja dla komendy /simplesession top
+# /ss top [type] [page] - types: session, total, record, today, week, month, sessions
 leaderboard:
-  # How many players to display / Ile graczy wyświetlać
+  # Players per page / Graczy na stronę
   top-size: 10
 
-  # Title for the leaderboard / Tytuł rankingu
-  title: "&6&l🏆 TOP {size} - Bieżące Sesje"
+  # How many positions are cached for %simplesession_top_<type>_<n>_...% (stats types)
+  # Ile pozycji trzymać w cache dla placeholderów topek ze statystyk
+  placeholder-cache-size: 100
 
-  # Display format / Format wyświetlania
+  # How often cached stats leaderboards are refreshed (seconds)
+  # Jak często odświeżać cache topek ze statystyk (sekundy)
+  refresh-interval: 60
+
+  # Title / Tytuł - {size}, {type}, {page}, {pages}
+  title: "&6&l✪ TOP {size} &8- &e{type}"
+
+  # Names of leaderboard types / Nazwy typów rankingu
+  type-names:
+    session: "Bieżące sesje"
+    total: "Łączny czas gry"
+    record: "Najdłuższa sesja"
+    today: "Dzisiaj"
+    week: "Ten tydzień"
+    month: "Ten miesiąc"
+    sessions: "Liczba sesji"
+
   format:
-    # Header line / Górna linia
     header: "&7╔════════════════════════════════╗"
-
-    # Separator line / Linia separator
     separator: "&7╠════════════════════════════════╣"
-
-    # Line format for each player / Format linii dla każdego gracza
-    # Available placeholders / Dostępne placeholdery:
-    #   {medal} - Medal emoji / Emoji medalu
-    #   {rank} - Position number / Numer pozycji
-    #   {player} - Player name / Nazwa gracza
-    #   {time} - Formatted session time / Sformatowany czas sesji
-    #   {color} - Rank color / Kolor pozycji
+    # {medal}, {rank}, {player}, {time} (formatted), {value} (raw number), {color}
     line: "&7║ {medal} {rank}. {player} &7- {color}{time}"
-
-    # Footer line / Dolna linia
     footer: "&7╚════════════════════════════════╝"
+    # {time} for the "sessions" leaderboard / {time} dla rankingu liczby sesji
+    count: "{value}"
+    # Shown when there is more than one page / Pokazywane gdy jest więcej niż jedna strona
+    navigation: "&7Strona &e{page}&7/&e{pages}{next}"
+    next-page: " &8| &7Dalej: &e/ss top {type} {next_page}"
 
-    # Medals for top 3 / Medale dla top 3
+    # Medals / Medale (characters supported by the default Minecraft font)
     medals:
-      first: "🥇"   # 1st place / 1. miejsce
-      second: "🥈"  # 2nd place / 2. miejsce
-      third: "🥉"   # 3rd place / 3. miejsce
-      other: "  "   # 4th+ place / 4.+ miejsce
+      first: "&6❶"
+      second: "&7❷"
+      third: "&c❸"
+      other: "&8•"
 
     # Colors for ranks / Kolory dla pozycji
     colors:
-      first: "&6"   # 1st place / 1. miejsce (gold)
-      second: "&7"  # 2nd place / 2. miejsce (gray)
-      third: "&c"   # 3rd place / 3. miejsce (red)
-      other: "&f"   # 4th+ place / 4.+ miejsce (white)
+      first: "&6"
+      second: "&7"
+      third: "&c"
+      other: "&f"
+
+# ============================================
+#      PLACEHOLDER TEXTS / TEKSTY PLACEHOLDERÓW
+# ============================================
+placeholders:
+  # Empty leaderboard position / Pusta pozycja w topce
+  empty-name: ""
+  empty-time: ""
+  # Player not in a ranking / Gracz poza rankingiem
+  unranked: "-"
+  # Statistics disabled or not loaded / Statystyki wyłączone lub niewczytane
+  unavailable: "-"
 
 # ============================================
 #            SESSION MILESTONES
 # ============================================
-# Milestones are achievements players receive when they reach
-# specific session durations. You can send messages and execute
-# commands as rewards.
+# Milestones are achievements players receive when they reach a session duration.
+# Achieved milestones are kept when the session is restored (relog protection, /reload).
 #
-# Milestones są osiągnięciami które gracze otrzymują gdy osiągną
-# określony czas sesji. Możesz wysyłać wiadomości i wykonywać
-# komendy jako nagrody.
+# Milestones są osiągnięciami które gracze otrzymują po osiągnięciu czasu sesji.
+#
+# Every milestone / Każdy milestone:
+#   time: 1800 or "30m", "1h30m"  - required session time / wymagany czas sesji
+#   message: "..."                - message to the player / wiadomość do gracza
+#   broadcast: "..."              - message to everyone / wiadomość do wszystkich
+#   permission: "..."             - optional permission / opcjonalne uprawnienie
+#   commands:                     - actions / akcje:
+#     - "give {player} diamond 1"          (console command / komenda konsoli)
+#     - "[console] eco give {player} 100"
+#     - "[player] spawn"                   (run by the player / wykonywana przez gracza)
+#     - "[broadcast] &e{player} is great!"
+#     - "[message] &aText for the player"
+#     - "[actionbar] &6+1 hour!"
+#     - "[title] &6WOW!;&e{time} on the server"
+#     - "[sound] entity.player.levelup;1;1"
+#
+# Placeholders: {player}, {uuid}, {time} (milestone time), {session} (current session)
+# and PlaceholderAPI placeholders in texts / oraz placeholdery PlaceholderAPI w tekstach.
 milestones:
-  # Enable/disable milestones / Włącz/wyłącz milestones
   enabled: true
 
   # How often to check (in seconds) / Jak często sprawdzać (w sekundach)
-  check-interval: 60
+  check-interval: 10
 
-  # List of milestones / Lista milestone'ów
   list:
-    # 30 minutes / 30 minut
     half_hour:
-      time: 1800  # seconds / sekundy
-      message: "&aGrasz już 30 minut! Dziękujemy! &e❤"
+      time: 1800
+      message: "&aGrasz już {time}! Dziękujemy! &c❤"
       commands: []
 
-    # 1 hour / 1 godzina
     one_hour:
-      time: 3600  # seconds / sekundy
-      message: "&6&lWOW! &ePełna godzina na serwerze! &6⭐"
-      commands:
-        - "broadcast &e{player} &7gra już &e1 godzinę &7non-stop!"
+      time: 3600
+      message: "&6&lWOW! &ePełna godzina na serwerze! &6★"
+      broadcast: "&e{player} &7gra już &e1 godzinę &7non-stop!"
+      commands: []
       # You can add rewards / Możesz dodać nagrody:
       # - "give {player} diamond 1"
       # - "eco give {player} 100"
 
-    # 2 hours / 2 godziny
     two_hours:
-      time: 7200  # seconds / sekundy
-      message: "&c&lNIESAMOWITE! &62 godziny non-stop! &c🔥"
+      time: 7200
+      message: "&c&lNIESAMOWITE! &62 godziny non-stop! &c✦"
+      broadcast: "&c{player} &7gra już &c2 godziny &7bez przerwy!"
       commands:
-        - "broadcast &c{player} &7gra już &c2 godziny &7bez przerwy!"
+        - "[sound] entity.player.levelup;1;1"
 
-    # 3 hours / 3 godziny
     three_hours:
-      time: 10800  # seconds / sekundy
-      message: "&d&lLEGENDA! &53 godziny sesji! &d✨"
+      time: 10800
+      message: "&d&lLEGENDA! &53 godziny sesji! &d✧"
+      broadcast: "&d{player} &7jest legendą - &d3 godziny &7gry!"
       commands:
-        - "broadcast &d{player} &7jest legendą - &d3 godziny &7gry!"
+        - "[title] &d&lLEGENDA!;&53 godziny sesji"
 
-    # 5 hours / 5 godzin
     five_hours:
-      time: 18000  # seconds / sekundy
-      message: "&b&lEPICKIE! &35 godzin! Jesteś niesamowity! &b🏆"
-      commands:
-        - "broadcast &b&l{player} &7gra już &b&l5 GODZIN &7non-stop!"
-
-  # Available placeholders in messages and commands:
-  # Dostępne placeholdery w wiadomościach i komendach:
-  #   {player} - Player name / Nazwa gracza
-  #   {uuid}   - Player UUID / UUID gracza
-  #   {time}   - Formatted milestone time / Sformatowany czas milestone
+      time: 18000
+      message: "&b&lEPICKIE! &35 godzin! Jesteś niesamowity! &b✪"
+      broadcast: "&b&l{player} &7gra już &b&l5 GODZIN &7non-stop!"
+      commands: []
